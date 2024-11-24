@@ -2,6 +2,7 @@ public class Board {
     private final byte[][] board;
     private final int size;
     private final int offset;
+    private boolean isXTurn = true;
 
     public Board(int size, int offset) {
         board = new byte[size][size];
@@ -16,10 +17,17 @@ public class Board {
 
     public void makeMove(int x, int y, byte side) {
         board[x][y] = side;
+        updateTurn();
+
     }
 
     public void unmakeMove(int x, int y) {
         board[x][y] = 0;
+        updateTurn();
+    }
+
+    public void updateTurn() {
+        this.isXTurn = !this.isXTurn;
     }
 
     public boolean hasRowWing(byte side) {
@@ -103,6 +111,13 @@ public class Board {
                 stringBuilder.append(token);
             }
         }
+
+        if (this.isXTurn) {
+            stringBuilder.append("x");
+        } else {
+            stringBuilder.append("o");
+        }
+
         return stringBuilder.toString();
     }
 
@@ -121,6 +136,12 @@ public class Board {
                         break;
                     case '2':
                         board[i][j] = 2;
+                        break;
+                    case 'o':
+                        this.isXTurn = false;
+                        break;
+                    case 'x':
+                        this.isXTurn = true;
                         break;
                 }
                 inputIndex++;
@@ -150,5 +171,9 @@ public class Board {
             stringBuilder.append("\n");
         }
         return stringBuilder.toString();
+    }
+
+    public boolean getXTurn() {
+        return this.isXTurn;
     }
 }
