@@ -10,6 +10,7 @@ public class GUI extends JFrame {
     private final JButton[][] buttons;
     private final Board board;
     private final int size;
+    private final JLabel view;
 
     static class CustomButton extends JButton {
 
@@ -24,28 +25,22 @@ public class GUI extends JFrame {
     }
 
     public GUI(int size, Board board) {
+
         this.buttons = new CustomButton[size][size];
         this.board = board;
         this.size = size;
+        this.view = new JLabel("Turn: " + (board.getSideToMove() == 1 ? "X" : "O"));
+
+        Search search = new Search();
 
         JPanel panel = new JPanel();
-
         JPanel buttonPanel = new JPanel();
 
         buttonPanel.setLayout(new GridLayout(size, size));
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                CustomButton button = new CustomButton(" - ", i, j);
-                button.setPreferredSize(new Dimension(80, 80));
-                button.addMouseListener(new MouseAdapter() {
-                    @Override
-                    public void mouseClicked(MouseEvent e) {
-                        super.mouseClicked(e);
-                        buttons[button.i][button.j].setText(board.getXTurn() ? "X" : "O");
-                        board.makeMove(button.i, button.j, (byte) (board.getXTurn() ? 1 : 2));
-                    }
-                });
+                CustomButton button = createCustomButton(board, i, j);
                 buttonPanel.add(button);
                 this.buttons[i][j] = button;
             }
@@ -71,11 +66,35 @@ public class GUI extends JFrame {
                     return;
                 }
 
-                board.setBoardNotation(input);
-                updateBoard(input);
+                setBoardNotation(input);
             }
         });
 
+        JButton exportBoardNotation = getExportBoardNotation(board);
+
+        JCheckBox shouldCopy = new JCheckBox("Copy text", true);
+
+        debugPanel.add(importBoardNotation);
+        debugPanel.add(exportBoardNotation);
+        debugPanel.add(boardNotationInput);
+        debugPanel.add(shouldCopy);
+
+        panel.add(debugPanel);
+        panel.add(buttonPanel);
+        panel.add(this.view);
+
+        add(panel);
+        setSize(size * size, size * size);
+        pack();
+
+        //setBoardNotation("000000000x");
+        setBoardNotation("000000000x");
+        System.out.println(board);
+
+
+    }
+
+    private static JButton getExportBoardNotation(Board board) {
         JButton exportBoardNotation = new JButton("Export Board");
         exportBoardNotation.setPreferredSize(new Dimension(130, 30));
         exportBoardNotation.addMouseListener(new MouseAdapter() {
@@ -89,20 +108,26 @@ public class GUI extends JFrame {
                 System.out.println("Exported the board: " + input);
             }
         });
+        return exportBoardNotation;
+    }
 
-        JCheckBox shouldCopy = new JCheckBox("Copy text", true);
+    private void setBoardNotation(String notation) {
+        board.setBoardNotation(notation);
+        updateBoard(notation);
+    }
 
-        debugPanel.add(importBoardNotation);
-        debugPanel.add(exportBoardNotation);
-        debugPanel.add(shouldCopy);
-        debugPanel.add(boardNotationInput);
-
-        panel.add(debugPanel);
-        panel.add(buttonPanel);
-
-        add(panel);
-        setSize(size * size, size * size);
-        pack();
+    private CustomButton createCustomButton(Board board, int i, int j) {
+        CustomButton button = new CustomButton(" - ", i, j);
+        button.setPreferredSize(new Dimension(80, 80));
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                buttons[button.i][button.j].setText(board.getSideToMove() == 1 ? "X" : "O");
+                board.makeMove(button.i, button.j);
+            }
+        });
+        return button;
     }
 
     private void updateBoard(String updateNotation) {
@@ -121,19 +146,8 @@ public class GUI extends JFrame {
                 }
             }
         }
-        System.out.println(board);
-        pack();
-    }
 
-    private void test() {
-        System.out.println(board.getBoardNotation());
-        //board.setBoardNotation("00000000000000000000000000");
-        board.setBoardNotation("00000010000010000010000000");
-        //board.setBoardNotation("1000100001");
-        System.out.println(board);
-        System.out.println(board.isDraw());
-        System.out.println(board.hasRowWing((byte) 1));
-        System.out.println(board.hasColumWin((byte) 1));
-        System.out.println(board.hasDiagonalWin((byte) 1));
+        this.view.setText("Turn: " + (board.getSideToMove() == 1 ? "X" : "O"));
+        pack();
     }
 }

@@ -1,8 +1,11 @@
+
+
 public class Board {
     private final byte[][] board;
     private final int size;
     private final int offset;
-    private boolean isXTurn = true;
+
+    private byte sideToMove = 1;
 
     public Board(int size, int offset) {
         board = new byte[size][size];
@@ -15,10 +18,9 @@ public class Board {
         }
     }
 
-    public void makeMove(int x, int y, byte side) {
-        board[x][y] = side;
+    public void makeMove(int x, int y) {
+        board[x][y] = this.sideToMove;
         updateTurn();
-
     }
 
     public void unmakeMove(int x, int y) {
@@ -26,11 +28,81 @@ public class Board {
         updateTurn();
     }
 
-    public void updateTurn() {
-        this.isXTurn = !this.isXTurn;
+    public int[][] generateLegalMoves() {
+
+        int arraySize = 0;
+        for (int i = 0; i < this.size; i++) {
+            for (int j = 0; j < this.size; j++) {
+                byte token = board[i][j];
+                if (token == 0) {
+                    arraySize++;
+                }
+            }
+        }
+
+        int[][] legalMoves = new int[arraySize][2];
+
+        int counter = 0;
+        for (int i = 0; i < this.size; i++) {
+            for (int j = 0; j < this.size; j++) {
+                byte token = board[i][j];
+                if (token == 0) {
+                    legalMoves[counter][0] = i;
+                    legalMoves[counter][1] = j;
+                    counter++;
+                }
+            }
+        }
+
+        return legalMoves;
     }
 
-    public boolean hasRowWing(byte side) {
+    public int[] scoreMoves(int[][] legalMoves) {
+
+        int[] scores = new int[legalMoves.length];
+
+        for (int i = 0; i < legalMoves.length; i++) {
+            makeMove(legalMoves[i][0], legalMoves[i][1]);
+
+            if (hasColumnWin(this.sideToMove) || hasDiagonalWin(this.sideToMove) || hasRowWin(this.sideToMove)) {
+                scores[i] = 100000;
+            }
+
+            if (isDraw()) {
+                scores[i] = 1;
+            }
+
+            unmakeMove(legalMoves[i][0], legalMoves[i][1]);
+        }
+
+        return scores;
+    }
+
+    public byte get(int i, int j) {
+        return board[i][j];
+    }
+
+    public int[] getSortedMove(int[][] legalMoves, int[] scores, int i) {
+        for (int j = i + 1; j < legalMoves.length; j++) {
+            if (scores[j] > scores[i]) {
+                int[] temp = legalMoves[j];
+                legalMoves[j] = legalMoves[i];
+                legalMoves[i] = temp;
+
+                int temp2 = scores[j];
+                scores[j] = scores[i];
+                scores[i] = temp2;
+            }
+        }
+
+        return legalMoves[i];
+    }
+
+    public void updateTurn() {
+        this.sideToMove = (byte) (this.sideToMove == 1 ? 2 : 1);
+    }
+
+    public boolean hasRowWin(byte side) {
         boolean isWon = false;
         for (int i = 0; i < this.size; i++) {
 
@@ -50,7 +122,7 @@ public class Board {
         return isWon;
     }
 
-    public boolean hasColumWin(byte side) {
+    public boolean hasColumnWin(byte side) {
         boolean isWon = false;
         for (int i = 0; i < this.size; i++) {
 
@@ -72,19 +144,30 @@ public class Board {
 
     public boolean hasDiagonalWin(byte side) {
         boolean isWon = false;
-        int isPlaced = 0;
-        for (int i = 0; i < this.size; i++) {
-            for (int j = 0; j < this.size; j++) {
-                if (board[i][j] == side) {
-                    isPlaced++;
-                }
 
-                if (isPlaced == this.size - this.offset) {
-                    isWon = true;
-                    break;
-                }
+        int sum = 0;
+        for (int i = 0; i < this.size; i++) {
+            if (board[i][i] == side) {
+                sum++;
             }
         }
+
+        if (sum == this.size - this.offset) {
+            return true;
+        }
+
+        sum = 0;
+
+        for (int i = this.size - 1; i > 0; i--) {
+            if (board[i][i] == side) {
+                sum++;
+            }
+        }
+
+        if (sum == this.size - this.offset) {
+            return true;
+        }
+
         return isWon;
     }
 
@@ -112,7 +195,7 @@ public class Board {
             }
         }
 
-        if (this.isXTurn) {
+        if (this.sideToMove == 1) {
             stringBuilder.append("x");
         } else {
             stringBuilder.append("o");
@@ -122,6 +205,13 @@ public class Board {
     }
 
     public void setBoardNotation(String boardNotation) {
+
+        if (boardNotation.charAt(boardNotation.length() - 1) == 'x') {
+            this.sideToMove = 1;
+        } else {
+            this.sideToMove = 2;
+        }
+
         char[] input = boardNotation.toCharArray();
         int inputIndex = 0;
         for (int i = 0; i < this.size; i++) {
@@ -137,16 +227,14 @@ public class Board {
                     case '2':
                         board[i][j] = 2;
                         break;
-                    case 'o':
-                        this.isXTurn = false;
-                        break;
-                    case 'x':
-                        this.isXTurn = true;
-                        break;
                 }
                 inputIndex++;
             }
         }
+    }
+
+    public byte getSideToMove() {
+        return sideToMove;
     }
 
     @Override
@@ -170,10 +258,7 @@ public class Board {
             }
             stringBuilder.append("\n");
         }
-        return stringBuilder.toString();
-    }
 
-    public boolean getXTurn() {
-        return this.isXTurn;
+        return stringBuilder.toString();
     }
 }
