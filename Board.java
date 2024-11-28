@@ -102,6 +102,86 @@ public class Board {
         this.sideToMove = (byte) (this.sideToMove == 1 ? 2 : 1);
     }
 
+    public boolean hasRowColumnWing(byte side) {
+        boolean isWon = false;
+        for (int i = 0; i < this.size; i++) {
+
+            int isPlacedRow = 0;
+            int isPlacedColumn = 0;
+
+            for (int j = 0; j < this.size; j++) {
+                if (board[i][j] == side) {
+                    isPlacedRow++;
+                }
+
+                if (board[j][i] == side) {
+                    isPlacedColumn++;
+                }
+            }
+
+            if (isPlacedRow == this.size || isPlacedColumn == this.size) {
+                isWon = true;
+                break;
+            }
+        }
+        return isWon;
+    }
+
+    public void testBoard() {
+
+        if (this.size == 3) {
+
+
+            System.out.println("Testing for board size: " + this.size);
+
+            // Test Column win
+            setBoardNotation("100100100o");
+            testSuit(hasColumnWin((byte) 1), "Column win for X");
+
+            setBoardNotation("200200200o");
+            testSuit(hasColumnWin((byte) 2), "Column win for O");
+
+            // Test Row win
+            setBoardNotation("111000000o");
+            testSuit(hasRowWin((byte) 1), "Row win for X");
+
+            setBoardNotation("222000000o");
+            testSuit(hasRowWin((byte) 2), "Row win for O");
+
+            // Test Diagonal win
+            setBoardNotation("221212122x");
+            testSuit(hasDiagonalWin((byte) 1), "Diagonal win for X");
+
+            setBoardNotation("112121210x");
+            testSuit(hasDiagonalWin((byte) 2), "Diagonal win for O");
+
+            setBoardNotation("100010001o");
+            testSuit(hasDiagonalWin((byte) 1), "Diagonal win for X");
+
+            setBoardNotation("200020002x");
+            testSuit(hasDiagonalWin((byte) 2), "Diagonal win for O");
+
+            // Check if we got non-false positives
+            setBoardNotation("122212222x");
+            testSuit(!hasDiagonalWin((byte) 1), "Invalid diagonal win for X");
+
+            setBoardNotation("211121111o");
+            testSuit(!hasDiagonalWin((byte) 2), "Invalid diagonal win for O");
+        }
+
+        if (this.size == 5) {
+            System.out.println("Testing for board size: " + this.size);
+            setBoardNotation("1222201100001000001000001o");
+            testSuit(hasDiagonalWin((byte) 1), "Diagonal win for X");
+        }
+    }
+
+    private void testSuit(boolean result, String message) {
+        if (!result) {
+            throw new RuntimeException("Error while testing: " + message + "!");
+        }
+    }
+
     public boolean hasRowWin(byte side) {
         boolean isWon = false;
         for (int i = 0; i < this.size; i++) {
@@ -143,32 +223,37 @@ public class Board {
     }
 
     public boolean hasDiagonalWin(byte side) {
-        boolean isWon = false;
 
         int sum = 0;
+
+        // Top left to bottom right
         for (int i = 0; i < this.size; i++) {
             if (board[i][i] == side) {
                 sum++;
             }
         }
 
+        // Check if we got a win
         if (sum == this.size - this.offset) {
             return true;
         }
 
+        // Reset sum
         sum = 0;
 
-        for (int i = this.size - 1; i > 0; i--) {
-            if (board[i][i] == side) {
+        // This value gets incremented while i gets decremented
+        int indexHelper = 0;
+
+        // Top right to bottom left
+        for (int i = this.size - 1; i > -1; i--) {
+            if (board[indexHelper][i] == side) {
                 sum++;
             }
+            indexHelper++;
         }
 
-        if (sum == this.size - this.offset) {
-            return true;
-        }
-
-        return isWon;
+        // Check if we got a win
+        return sum == this.size - this.offset;
     }
 
     public boolean isDraw() {
@@ -195,6 +280,7 @@ public class Board {
             }
         }
 
+        // Append the side to move
         if (this.sideToMove == 1) {
             stringBuilder.append("x");
         } else {
@@ -205,13 +291,14 @@ public class Board {
     }
 
     public void setBoardNotation(String boardNotation) {
-
+        // Determine the side to move
         if (boardNotation.charAt(boardNotation.length() - 1) == 'x') {
             this.sideToMove = 1;
         } else {
             this.sideToMove = 2;
         }
 
+        // Parse the board notation
         char[] input = boardNotation.toCharArray();
         int inputIndex = 0;
         for (int i = 0; i < this.size; i++) {

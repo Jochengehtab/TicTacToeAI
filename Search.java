@@ -1,8 +1,9 @@
+import java.util.Arrays;
+
 public class Search {
 
     int nodes = 0;
-
-    private long startTime = System.currentTimeMillis();
+    int searchDepth = 1;
 
     public int evaluate(Board board) {
         byte sideToMove = board.getSideToMove();
@@ -22,12 +23,23 @@ public class Search {
 
     public int minimax(Board board, int depth, int alpha, int beta, boolean isMaximizingPlayer) {
 
-        if ((System.currentTimeMillis() - startTime) >= 1000) {
-            return beta;
-        }
 
         int staticEval = evaluate(board);
+
+        // TODO make a proper exit
+        if (depth == searchDepth) {
+            if (staticEval == 10) {
+                return staticEval - depth;
+            }
+
+            if (staticEval == -10) {
+                return staticEval + depth;
+            }
+            return 0;
+        }
+
         nodes++;
+
         if (staticEval == 10) {
             return staticEval - depth;
         }
@@ -37,7 +49,7 @@ public class Search {
         }
 
         if (board.isDraw()) {
-            return 0;
+            return staticEval;
         }
 
         if (isMaximizingPlayer) {
@@ -77,26 +89,35 @@ public class Search {
     }
 
     public int[] getBestMove(Board board) {
-        int bestVal = -30000;
+        int bestScore = -30000;
         int[] bestMove = new int[2];
         nodes = 0;
+        searchDepth = 1;
 
-        int[][] legalMoves = board.generateLegalMoves();
-        startTime = System.currentTimeMillis();
-        System.out.println(startTime);
-        for (int[] move : legalMoves) {
-            board.makeMove(move[0], move[1]);
+        long startTime = System.currentTimeMillis();
 
-            int moveVal = minimax(board, 0,-30000, 30000, false);
+        while (!((System.currentTimeMillis() - startTime) >= 1000)) {
+            int[][] legalMoves = board.generateLegalMoves();
 
-            board.unmakeMove(move[0], move[1]);
+            for (int[] move : legalMoves) {
+                board.makeMove(move[0], move[1]);
+                int score = minimax(board, 0,-30000, 30000, false);
+                board.unmakeMove(move[0], move[1]);
 
-            if (moveVal > bestVal) {
-                bestMove[0] = move[0];
-                bestMove[1] = move[1];
-                bestVal = moveVal;
+                if (score > bestScore) {
+                    bestMove[0] = move[0];
+                    bestMove[1] = move[1];
+                    bestScore = score;
+                    System.out.println(Arrays.toString(move));
+                }
+            }
+            searchDepth++;
+            if (searchDepth == 256) {
+                break;
             }
         }
+
+        System.out.println("Depth: " + searchDepth);
         System.out.println("Nodes: " + nodes);
 
         return bestMove;

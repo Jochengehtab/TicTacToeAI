@@ -1,6 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -11,18 +10,7 @@ public class GUI extends JFrame {
     private final Board board;
     private final int size;
     private final JLabel view;
-
-    static class CustomButton extends JButton {
-
-        private final int i;
-        private final int j;
-
-        public CustomButton(String text, int i, int j) {
-            setText(text);
-            this.i = i;
-            this.j = j;
-        }
-    }
+    private final JCheckBox shouldCopy = new JCheckBox("Copy text", true);
 
     public GUI(int size, Board board) {
 
@@ -30,8 +18,6 @@ public class GUI extends JFrame {
         this.board = board;
         this.size = size;
         this.view = new JLabel("Turn: " + (board.getSideToMove() == 1 ? "X" : "O"));
-
-        Search search = new Search();
 
         JPanel panel = new JPanel();
         JPanel buttonPanel = new JPanel();
@@ -70,15 +56,13 @@ public class GUI extends JFrame {
             }
         });
 
-        JButton exportBoardNotation = getExportBoardNotation(board);
-
-        JCheckBox shouldCopy = new JCheckBox("Copy text", true);
-
+        // Add everything to the panel
         debugPanel.add(importBoardNotation);
-        debugPanel.add(exportBoardNotation);
+        debugPanel.add(getExportBoardNotation(board));
         debugPanel.add(boardNotationInput);
         debugPanel.add(shouldCopy);
 
+        // Add all features to the panel
         panel.add(debugPanel);
         panel.add(buttonPanel);
         panel.add(this.view);
@@ -87,52 +71,143 @@ public class GUI extends JFrame {
         setSize(size * size, size * size);
         pack();
 
-        //setBoardNotation("000000000x");
-        setBoardNotation("000000000x");
-        System.out.println(board);
-
-
+        // new Thread(this::playAgainstBot).start();
+        new Thread(this::playGame).start();
     }
 
-    private static JButton getExportBoardNotation(Board board) {
+    @SuppressWarnings("unused")
+    void playAgainstBot() {
+
+        Search search = new Search();
+
+        // Play until the board is full
+        while (!board.isDraw()) {
+
+            // Get the bestmove
+            int[] bestMove = search.getBestMove(board);
+
+            // Make the move
+            board.makeMove(bestMove[0], bestMove[1]);
+
+            // Update the board
+            setBoardNotation(board.getBoardNotation());
+
+            // Wait for the player to make an input
+            try {
+                while (board.getSideToMove() == 2) {
+                    //noinspection BusyWait
+                    Thread.sleep(500);
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    /**
+     * The bot plays against himself
+     */
+    @SuppressWarnings("unused")
+    private void playGame() {
+
+        Search search = new Search();
+
+        // Play until the board is full
+        while (!board.isDraw()) {
+            // Get the bestmove
+            int[] bestMove = search.getBestMove(board);
+
+            // Make the move
+            board.makeMove(bestMove[0], bestMove[1]);
+
+            // Update the board
+            setBoardNotation(board.getBoardNotation());
+        }
+    }
+
+    /**
+     * Creates the export button
+     * @param board The actual board
+     * @return The export button
+     */
+    private JButton getExportBoardNotation(Board board) {
         JButton exportBoardNotation = new JButton("Export Board");
+
+        // Set the default size
         exportBoardNotation.setPreferredSize(new Dimension(130, 30));
+
+        // Add the mouse listener
         exportBoardNotation.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
+
+                // Get the board notation
                 String input = board.getBoardNotation();
-                StringSelection stringSelection = new StringSelection(input);
-                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-                clipboard.setContents(stringSelection, null);
+
+                // Copy the board notation to the clipboard but only if enabled
+                if (shouldCopy.isSelected()) {
+                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(input), null);
+                }
+
                 System.out.println("Exported the board: " + input);
             }
         });
+
         return exportBoardNotation;
     }
 
+    /**
+     * Update the GUI based on the board
+     * @param notation The new board notation
+     */
     private void setBoardNotation(String notation) {
         board.setBoardNotation(notation);
         updateBoard(notation);
     }
 
+    /**
+     * Creates a button on the frame
+     * @param board The actual board
+     * @param i The first iteration value
+     * @param j The second iteration value
+     * @return The newly created Button
+     */
     private CustomButton createCustomButton(Board board, int i, int j) {
         CustomButton button = new CustomButton(" - ", i, j);
+
+        // Set the default size
         button.setPreferredSize(new Dimension(80, 80));
+
+        // Add the mouse listener
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
+
+                // Update the text
                 buttons[button.i][button.j].setText(board.getSideToMove() == 1 ? "X" : "O");
+
+                // Make the move on the actual board
                 board.makeMove(button.i, button.j);
+
+                // Update the turn view
+                view.setText("Turn: " + (board.getSideToMove() == 1 ? "X" : "O"));
             }
         });
         return button;
     }
 
+    /**
+     * Updates the GUI
+     * @param updateNotation The Board notation
+     */
     private void updateBoard(String updateNotation) {
+        // Converts the input to an array
         char[] input = updateNotation.toCharArray();
         int counter = 0;
+
+        // Loop over every char
         for (int i = 0; i < this.size; i++) {
             for (int j = 0; j < this.size; j++) {
                 char token = input[counter];
@@ -146,8 +221,19 @@ public class GUI extends JFrame {
                 }
             }
         }
-
-        this.view.setText("Turn: " + (board.getSideToMove() == 1 ? "X" : "O"));
         pack();
     }
+
+    static class CustomButton extends JButton {
+
+        private final int i;
+        private final int j;
+
+        public CustomButton(String text, int i, int j) {
+            setText(text);
+            this.i = i;
+            this.j = j;
+        }
+    }
+
 }
