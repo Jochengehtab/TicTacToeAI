@@ -3,6 +3,7 @@ import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Arrays;
 
 public class GUI extends JFrame {
 
@@ -11,6 +12,7 @@ public class GUI extends JFrame {
     private final int size;
     private final JLabel view;
     private final JCheckBox shouldCopy = new JCheckBox("Copy text", true);
+    private final Search search = new Search();
 
     public GUI(int size, Board board) {
 
@@ -37,7 +39,6 @@ public class GUI extends JFrame {
 
         JButton importBoardNotation = new JButton("Import Board");
         importBoardNotation.setPreferredSize(new Dimension(130, 30));
-
 
         JTextField boardNotationInput = new JTextField();
 
@@ -71,14 +72,31 @@ public class GUI extends JFrame {
         setSize(size * size, size * size);
         pack();
 
+        // Diagonal Position
+        printBestMoveFromPosition("100010000o");
+
+        // Tricky Position
+        //printBestMoveFromPosition("121000000o");
+
         // new Thread(this::playAgainstBot).start();
-        new Thread(this::playGame).start();
+        // new Thread(this::playGame).start();
     }
 
     @SuppressWarnings("unused")
-    void playAgainstBot() {
+    private void printBestMoveFromPosition(String notation) {
+        setBoardNotation(notation);
 
-        Search search = new Search();
+        // Get the bestmove
+        int[] bestMove = search.getBestMove(board);
+
+        System.out.println("The bestmove is: " + Arrays.toString(bestMove));
+
+        board.makeMove(bestMove[0], bestMove[1]);
+        setBoardNotation(board.getBoardNotation());
+    }
+
+    @SuppressWarnings("unused")
+    private void playAgainstBot() {
 
         // Play until the board is full
         while (!board.isDraw()) {
@@ -109,8 +127,6 @@ public class GUI extends JFrame {
      */
     @SuppressWarnings("unused")
     private void playGame() {
-
-        Search search = new Search();
 
         // Play until the board is full
         while (!board.isDraw()) {

@@ -9,6 +9,16 @@ public class Search {
         byte sideToMove = board.getSideToMove();
         byte opponent = (byte) (sideToMove == 1 ? 2 : 1);
 
+        if (board.size() % 2 == 1) {
+            int center = board.size() / 2;
+
+            if (board.get(center, center) == sideToMove) {
+                return 5;
+            } else if (board.get(center, center) == opponent) {
+                return -5;
+            }
+        }
+
         if (board.hasDiagonalWin(sideToMove) || board.hasRowWin(sideToMove) || board.hasColumnWin(sideToMove)) {
             return 10;
         }
@@ -17,75 +27,40 @@ public class Search {
             return -10;
         }
 
-
         return 0;
     }
 
     public int minimax(Board board, int depth, int alpha, int beta, boolean isMaximizingPlayer) {
 
-
-        int staticEval = evaluate(board);
-
-        // TODO make a proper exit
-        if (depth == searchDepth) {
-            if (staticEval == 10) {
-                return staticEval - depth;
-            }
-
-            if (staticEval == -10) {
-                return staticEval + depth;
-            }
-            return 0;
-        }
-
         nodes++;
-
-        if (staticEval == 10) {
-            return staticEval - depth;
+        if (depth == 0 || board.isGameOver()) {
+            return evaluate(board);
         }
 
-        if (staticEval == -10) {
-            return staticEval + depth;
-        }
+        int bestScore = isMaximizingPlayer ? -30000 : 30000;
+        int[][] legalMoves = board.generateLegalMoves();
 
-        if (board.isDraw()) {
-            return staticEval;
-        }
+        for (int[] move : legalMoves) {
+            board.makeMove(move[0], move[1]);
 
-        if (isMaximizingPlayer) {
-            int bestScore = -30000;
+            int score = minimax(board, depth - 1, alpha, beta, !isMaximizingPlayer);
 
-            int[][] legalMoves = board.generateLegalMoves();
-            for (int[] move : legalMoves) {
-                board.makeMove(move[0], move[1]);
+            board.unmakeMove(move[0], move[1]);
 
-                bestScore = Math.max(bestScore, minimax(board, depth + 1, alpha, beta, false));
-
-                board.unmakeMove(move[0], move[1]);
-
+            if (isMaximizingPlayer) {
+                bestScore = Math.max(bestScore, score);
                 alpha = Math.max(alpha, bestScore);
-                if (bestScore >= beta) {
-                    break;
-                }
-            }
-            return bestScore;
-        } else {
-            int bestScore = 30000;
-            int[][] legalMoves = board.generateLegalMoves();
-            for (int[] move : legalMoves) {
-                board.makeMove(move[0], move[1]);
-
-                bestScore = Math.min(bestScore, minimax(board, depth + 1, alpha, beta, true));
-
-                board.unmakeMove(move[0], move[1]);
-
+            } else {
+                bestScore = Math.min(bestScore, score);
                 beta = Math.min(beta, bestScore);
-                if (bestScore <= alpha) {
-                    break;
-                }
             }
-            return bestScore;
+
+            if (alpha >= beta) {
+                break;
+            }
         }
+
+        return bestScore;
     }
 
     public int[] getBestMove(Board board) {
@@ -98,20 +73,39 @@ public class Search {
 
         while (!((System.currentTimeMillis() - startTime) >= 1000)) {
             int[][] legalMoves = board.generateLegalMoves();
+            int[] scores = board.scoreMoves(legalMoves); // Add a method to score the moves
 
+            // Sort moves by score (highest to lowest)
+            for (int i = 0; i < legalMoves.length - 1; i++) {
+                for (int j = i + 1; j < legalMoves.length; j++) {
+                    if (scores[j] > scores[i]) {
+                        int[] tempMove = legalMoves[j];
+                        legalMoves[j] = legalMoves[i];
+                        legalMoves[i] = tempMove;
+
+                        int tempScore = scores[j];
+                        scores[j] = scores[i];
+                        scores[i] = tempScore;
+                    }
+                }
+            }
+
+            // Run the Minimax algorithm with sorted moves
             for (int[] move : legalMoves) {
                 board.makeMove(move[0], move[1]);
-                int score = minimax(board, 0,-30000, 30000, false);
+                int score = minimax(board, searchDepth, -30000, 30000, false);
+                System.out.println(Arrays.toString(move) + " | " + score);
                 board.unmakeMove(move[0], move[1]);
 
                 if (score > bestScore) {
                     bestMove[0] = move[0];
                     bestMove[1] = move[1];
                     bestScore = score;
-                    System.out.println(Arrays.toString(move));
                 }
             }
+
             searchDepth++;
+
             if (searchDepth == 256) {
                 break;
             }

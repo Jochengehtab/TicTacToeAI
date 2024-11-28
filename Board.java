@@ -176,6 +176,17 @@ public class Board {
         }
     }
 
+    public boolean isGameOver() {
+        if (hasRowWin((byte) 1) || hasColumnWin((byte) 1) || hasDiagonalWin((byte) 1)) {
+            return true;
+        }
+        if (hasRowWin((byte) 2) || hasColumnWin((byte) 2) || hasDiagonalWin((byte) 2)) {
+            return true;
+        }
+        return isDraw();
+    }
+
+
     private void testSuit(boolean result, String message) {
         if (!result) {
             throw new RuntimeException("Error while testing: " + message + "!");
@@ -322,6 +333,10 @@ public class Board {
 
     public byte getSideToMove() {
         return sideToMove;
+    }
+
+    public int size() {
+        return this.size;
     }
 
     @Override
