@@ -18,6 +18,11 @@ public class Board {
         }
     }
 
+    public void makeMove(int[] move) {
+        board[move[0]][move[1]] = this.sideToMove;
+        updateTurn();
+    }
+
     public void makeMove(int x, int y) {
         board[x][y] = this.sideToMove;
         updateTurn();

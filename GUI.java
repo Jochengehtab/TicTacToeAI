@@ -87,7 +87,7 @@ public class GUI extends JFrame {
         setBoardNotation(notation);
 
         // Get the bestmove
-        int[] bestMove = search.getBestMove(board);
+        int[] bestMove = search.getBestMove(board, 1000);
 
         System.out.println("The bestmove is: " + Arrays.toString(bestMove));
 
@@ -100,25 +100,24 @@ public class GUI extends JFrame {
 
         // Play until the board is full
         while (!board.isDraw()) {
-
-            // Get the bestmove
-            int[] bestMove = search.getBestMove(board);
-
-            // Make the move
-            board.makeMove(bestMove[0], bestMove[1]);
-
-            // Update the board
-            setBoardNotation(board.getBoardNotation());
-
             // Wait for the player to make an input
             try {
-                while (board.getSideToMove() == 2) {
+                while (board.getSideToMove() == 1) {
                     //noinspection BusyWait
                     Thread.sleep(500);
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
+
+            // Get the bestmove
+            int[] bestMove = search.getBestMove(board, 1000);
+
+            // Make the move
+            board.makeMove(bestMove[0], bestMove[1]);
+
+            // Update the board
+            setBoardNotation(board.getBoardNotation());
         }
     }
 
@@ -131,7 +130,7 @@ public class GUI extends JFrame {
         // Play until the board is full
         while (!board.isDraw()) {
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board);
+            int[] bestMove = search.getBestMove(board, 1000);
 
             // Make the move
             board.makeMove(bestMove[0], bestMove[1]);
