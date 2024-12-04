@@ -1,5 +1,3 @@
-
-
 public class Board {
     private final byte[][] board;
     private final int size;
@@ -28,13 +26,12 @@ public class Board {
         updateTurn();
     }
 
-    public void unmakeMove(int x, int y) {
-        board[x][y] = 0;
+    public void unmakeMove(int[] move) {
+        board[move[0]][move[1]] = 0;
         updateTurn();
     }
 
     public int[][] generateLegalMoves() {
-
         int arraySize = 0;
         for (int i = 0; i < this.size; i++) {
             for (int j = 0; j < this.size; j++) {
@@ -67,17 +64,17 @@ public class Board {
         int[] scores = new int[legalMoves.length];
 
         for (int i = 0; i < legalMoves.length; i++) {
-            makeMove(legalMoves[i][0], legalMoves[i][1]);
+            makeMove(legalMoves[i]);
 
-            if (hasColumnWin(this.sideToMove) || hasDiagonalWin(this.sideToMove) || hasRowWin(this.sideToMove)) {
+            if (hasRowColumnWin(this.sideToMove) || hasDiagonalWin(this.sideToMove)) {
                 scores[i] = 100000;
             }
 
-            if (isDraw()) {
+            if (isFull()) {
                 scores[i] = 1;
             }
 
-            unmakeMove(legalMoves[i][0], legalMoves[i][1]);
+            unmakeMove(legalMoves[i]);
         }
 
         return scores;
@@ -107,7 +104,7 @@ public class Board {
         this.sideToMove = (byte) (this.sideToMove == 1 ? 2 : 1);
     }
 
-    public boolean hasRowColumnWing(byte side) {
+    public boolean hasRowColumnWin(byte side) {
         boolean isWon = false;
         for (int i = 0; i < this.size; i++) {
 
@@ -132,110 +129,14 @@ public class Board {
         return isWon;
     }
 
-    public void testBoard() {
-
-        if (this.size == 3) {
-
-
-            System.out.println("Testing for board size: " + this.size);
-
-            // Test Column win
-            setBoardNotation("100100100o");
-            testSuit(hasColumnWin((byte) 1), "Column win for X");
-
-            setBoardNotation("200200200o");
-            testSuit(hasColumnWin((byte) 2), "Column win for O");
-
-            // Test Row win
-            setBoardNotation("111000000o");
-            testSuit(hasRowWin((byte) 1), "Row win for X");
-
-            setBoardNotation("222000000o");
-            testSuit(hasRowWin((byte) 2), "Row win for O");
-
-            // Test Diagonal win
-            setBoardNotation("221212122x");
-            testSuit(hasDiagonalWin((byte) 1), "Diagonal win for X");
-
-            setBoardNotation("112121210x");
-            testSuit(hasDiagonalWin((byte) 2), "Diagonal win for O");
-
-            setBoardNotation("100010001o");
-            testSuit(hasDiagonalWin((byte) 1), "Diagonal win for X");
-
-            setBoardNotation("200020002x");
-            testSuit(hasDiagonalWin((byte) 2), "Diagonal win for O");
-
-            // Check if we got non-false positives
-            setBoardNotation("122212222x");
-            testSuit(!hasDiagonalWin((byte) 1), "Invalid diagonal win for X");
-
-            setBoardNotation("211121111o");
-            testSuit(!hasDiagonalWin((byte) 2), "Invalid diagonal win for O");
-        }
-
-        if (this.size == 5) {
-            System.out.println("Testing for board size: " + this.size);
-            setBoardNotation("1222201100001000001000001o");
-            testSuit(hasDiagonalWin((byte) 1), "Diagonal win for X");
-        }
-    }
-
     public boolean isGameOver() {
-        if (hasRowWin((byte) 1) || hasColumnWin((byte) 1) || hasDiagonalWin((byte) 1)) {
+        if (hasDiagonalWin((byte) 1) || hasRowColumnWin((byte) 1)) {
             return true;
         }
-        if (hasRowWin((byte) 2) || hasColumnWin((byte) 2) || hasDiagonalWin((byte) 2)) {
+        if (hasDiagonalWin((byte) 2) || hasRowColumnWin((byte) 2)) {
             return true;
         }
-        return isDraw();
-    }
-
-
-    private void testSuit(boolean result, String message) {
-        if (!result) {
-            throw new RuntimeException("Error while testing: " + message + "!");
-        }
-    }
-
-    public boolean hasRowWin(byte side) {
-        boolean isWon = false;
-        for (int i = 0; i < this.size; i++) {
-
-            int isPlaced = 0;
-
-            for (int j = 0; j < this.size; j++) {
-                if (board[i][j] == side) {
-                    isPlaced++;
-                }
-            }
-
-            if (isPlaced == this.size) {
-                isWon = true;
-                break;
-            }
-        }
-        return isWon;
-    }
-
-    public boolean hasColumnWin(byte side) {
-        boolean isWon = false;
-        for (int i = 0; i < this.size; i++) {
-
-            int isPlaced = 0;
-
-            for (int j = 0; j < this.size; j++) {
-                if (board[j][i] == side) {
-                    isPlaced++;
-                }
-            }
-
-            if (isPlaced == this.size) {
-                isWon = true;
-                break;
-            }
-        }
-        return isWon;
+        return isFull();
     }
 
     public boolean hasDiagonalWin(byte side) {
@@ -272,7 +173,7 @@ public class Board {
         return sum == this.size - this.offset;
     }
 
-    public boolean isDraw() {
+    public boolean isFull() {
         boolean isDraw = true;
 
         for (int i = 0; i < this.size; i++) {

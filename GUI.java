@@ -73,17 +73,17 @@ public class GUI extends JFrame {
         pack();
 
         // Diagonal Position
-        printBestMoveFromPosition("100010000o");
+        // printBestMoveFromPosition("100010000o");
 
         // Tricky Position
-        //printBestMoveFromPosition("121000000o");
+        // printBestMoveFromPosition("121000000o");
 
         // new Thread(this::playAgainstBot).start();
         // new Thread(this::playGame).start();
     }
 
     @SuppressWarnings("unused")
-    private void printBestMoveFromPosition(String notation) {
+    private void printBestMoveFromPosition(@SuppressWarnings("SameParameterValue") String notation) {
         setBoardNotation(notation);
 
         // Get the bestmove
@@ -91,7 +91,7 @@ public class GUI extends JFrame {
 
         System.out.println("The bestmove is: " + Arrays.toString(bestMove));
 
-        board.makeMove(bestMove[0], bestMove[1]);
+        board.makeMove(bestMove);
         setBoardNotation(board.getBoardNotation());
     }
 
@@ -99,7 +99,7 @@ public class GUI extends JFrame {
     private void playAgainstBot() {
 
         // Play until the board is full
-        while (!board.isDraw()) {
+        while (!board.isFull()) {
             // Wait for the player to make an input
             try {
                 while (board.getSideToMove() == 1) {
@@ -114,7 +114,7 @@ public class GUI extends JFrame {
             int[] bestMove = search.getBestMove(board, 1000);
 
             // Make the move
-            board.makeMove(bestMove[0], bestMove[1]);
+            board.makeMove(bestMove);
 
             // Update the board
             setBoardNotation(board.getBoardNotation());
@@ -128,12 +128,12 @@ public class GUI extends JFrame {
     private void playGame() {
 
         // Play until the board is full
-        while (!board.isDraw()) {
+        while (!board.isFull()) {
             // Get the bestmove
             int[] bestMove = search.getBestMove(board, 1000);
 
             // Make the move
-            board.makeMove(bestMove[0], bestMove[1]);
+            board.makeMove(bestMove);
 
             // Update the board
             setBoardNotation(board.getBoardNotation());
@@ -142,6 +142,7 @@ public class GUI extends JFrame {
 
     /**
      * Creates the export button
+     *
      * @param board The actual board
      * @return The export button
      */
@@ -174,6 +175,7 @@ public class GUI extends JFrame {
 
     /**
      * Update the GUI based on the board
+     *
      * @param notation The new board notation
      */
     private void setBoardNotation(String notation) {
@@ -183,9 +185,10 @@ public class GUI extends JFrame {
 
     /**
      * Creates a button on the frame
+     *
      * @param board The actual board
-     * @param i The first iteration value
-     * @param j The second iteration value
+     * @param i     The first iteration value
+     * @param j     The second iteration value
      * @return The newly created Button
      */
     private CustomButton createCustomButton(Board board, int i, int j) {
@@ -215,6 +218,7 @@ public class GUI extends JFrame {
 
     /**
      * Updates the GUI
+     *
      * @param updateNotation The Board notation
      */
     private void updateBoard(String updateNotation) {
