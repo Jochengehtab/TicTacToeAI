@@ -121,7 +121,7 @@ public class Board {
                 }
             }
 
-            if (isPlacedRow == this.size || isPlacedColumn == this.size) {
+            if (isPlacedRow == this.size - this.offset || isPlacedColumn == this.size - this.offset) {
                 isWon = true;
                 break;
             }
@@ -130,10 +130,10 @@ public class Board {
     }
 
     public boolean isGameOver() {
-        if (hasDiagonalWin((byte) 1) || hasRowColumnWin((byte) 1)) {
+        if ( hasRowColumnWin((byte) 1) || hasDiagonalWin((byte) 1)) {
             return true;
         }
-        if (hasDiagonalWin((byte) 2) || hasRowColumnWin((byte) 2)) {
+        if (hasRowColumnWin((byte) 2) || hasDiagonalWin((byte) 2)) {
             return true;
         }
         return isFull();
@@ -141,36 +141,47 @@ public class Board {
 
     public boolean hasDiagonalWin(byte side) {
 
-        int sum = 0;
-
-        // Top left to bottom right
+        // Check top-left to bottom-right diagonal
+        int consecutiveCount = 0;
+        int gapsAllowed = this.offset;
+        int gapsUsed = 0;
         for (int i = 0; i < this.size; i++) {
             if (board[i][i] == side) {
-                sum++;
+                consecutiveCount++;
+            } else if (board[i][i] == 0 && gapsUsed < gapsAllowed) {
+                consecutiveCount++;
+                gapsUsed++;
+            } else {
+                consecutiveCount = 0;
+                gapsUsed = 0;
+            }
+
+            if (consecutiveCount == this.size - this.offset) {
+                return true;
             }
         }
 
-        // Check if we got a win
-        if (sum == this.size - this.offset) {
-            return true;
-        }
-
-        // Reset sum
-        sum = 0;
-
-        // This value gets incremented while i gets decremented
-        int indexHelper = 0;
-
-        // Top right to bottom left
-        for (int i = this.size - 1; i > -1; i--) {
-            if (board[indexHelper][i] == side) {
-                sum++;
+        // Check top-right to bottom-left diagonal
+        consecutiveCount = 0;
+        gapsUsed = 0;
+        for (int i = 0; i < this.size; i++) {
+            int j = this.size - 1 - i;
+            if (board[i][j] == side) {
+                consecutiveCount++;
+            } else if (board[i][j] == 0 && gapsUsed < gapsAllowed) {
+                consecutiveCount++;
+                gapsUsed++;
+            } else {
+                consecutiveCount = 0;
+                gapsUsed = 0;
             }
-            indexHelper++;
+
+            if (consecutiveCount == this.size - this.offset) {
+                return true;
+            }
         }
 
-        // Check if we got a win
-        return sum == this.size - this.offset;
+        return false;
     }
 
     public boolean isFull() {

@@ -78,7 +78,7 @@ public class GUI extends JFrame {
         // Tricky Position
         // printBestMoveFromPosition("121000000o");
 
-        // new Thread(this::playAgainstBot).start();
+        //new Thread(this::playAgainstBot).start();
         // new Thread(this::playGame).start();
     }
 
@@ -87,7 +87,7 @@ public class GUI extends JFrame {
         setBoardNotation(notation);
 
         // Get the bestmove
-        int[] bestMove = search.getBestMove(board, 1000);
+        int[] bestMove = search.getBestMove(board, 10);
 
         System.out.println("The bestmove is: " + Arrays.toString(bestMove));
 
@@ -111,7 +111,7 @@ public class GUI extends JFrame {
             }
 
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board, 1000);
+            int[] bestMove = search.getBestMove(board, 10);
 
             // Make the move
             board.makeMove(bestMove);
@@ -130,7 +130,7 @@ public class GUI extends JFrame {
         // Play until the board is full
         while (!board.isFull()) {
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board, 1000);
+            int[] bestMove = search.getBestMove(board, 10);
 
             // Make the move
             board.makeMove(bestMove);

@@ -23,11 +23,11 @@ public class Search {
         }
 
         if (board.hasDiagonalWin(xSide) || board.hasRowColumnWin(xSide)) {
-            xEval += 10;
+            xEval += 30000;
         }
 
         if (board.hasDiagonalWin(oSide) || board.hasRowColumnWin(oSide)) {
-            oEval += 10;
+            oEval += 30000;
         }
 
         int diff = xEval - oEval;

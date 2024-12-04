@@ -22,6 +22,13 @@ public class UnitTests {
     }
 
     @Test
+    public void testOffset() {
+        board = new Board(5, 2);
+        board.setBoardNotation("0010000010000210000020000x");
+        Assertions.assertTrue(board.hasDiagonalWin((byte) 1));
+    }
+
+    @Test
     public void testBoard() {
 
         board = new Board(3, 0);
