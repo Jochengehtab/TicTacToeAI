@@ -84,6 +84,16 @@ public class Board {
         return board[i][j];
     }
 
+    public void reset() {
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                board[i][j] = 0;
+            }
+        }
+
+        this.sideToMove = 1;
+    }
+
     public int[] getSortedMove(int[][] legalMoves, int[] scores, int i) {
         for (int j = i + 1; j < legalMoves.length; j++) {
             if (scores[j] > scores[i]) {
@@ -140,44 +150,63 @@ public class Board {
     }
 
     public boolean hasDiagonalWin(byte side) {
+        for (int startRow = 0; startRow < this.size; startRow++) {
+            int tempCount = 0;
+            for (int i = 0; i < this.size - startRow; i++) {
+                if (board[startRow + i][i] == side) {
+                    tempCount++;
+                } else {
+                    tempCount = 0;
+                }
 
-        // Check top-left to bottom-right diagonal
-        int consecutiveCount = 0;
-        int gapsAllowed = this.offset;
-        int gapsUsed = 0;
-        for (int i = 0; i < this.size; i++) {
-            if (board[i][i] == side) {
-                consecutiveCount++;
-            } else if (board[i][i] == 0 && gapsUsed < gapsAllowed) {
-                consecutiveCount++;
-                gapsUsed++;
-            } else {
-                consecutiveCount = 0;
-                gapsUsed = 0;
-            }
-
-            if (consecutiveCount == this.size - this.offset) {
-                return true;
+                if (tempCount == this.size - this.offset) {
+                    return true;
+                }
             }
         }
 
-        // Check top-right to bottom-left diagonal
-        consecutiveCount = 0;
-        gapsUsed = 0;
-        for (int i = 0; i < this.size; i++) {
-            int j = this.size - 1 - i;
-            if (board[i][j] == side) {
-                consecutiveCount++;
-            } else if (board[i][j] == 0 && gapsUsed < gapsAllowed) {
-                consecutiveCount++;
-                gapsUsed++;
-            } else {
-                consecutiveCount = 0;
-                gapsUsed = 0;
-            }
+        for (int startCol = 1; startCol < this.size; startCol++) {
+            int tempCount = 0;
+            for (int i = 0; i < this.size - startCol; i++) {
+                if (board[i][startCol + i] == side) {
+                    tempCount++;
+                } else {
+                    tempCount = 0;
+                }
 
-            if (consecutiveCount == this.size - this.offset) {
-                return true;
+                if (tempCount == this.size - this.offset) {
+                    return true;
+                }
+            }
+        }
+
+        for (int startRow = 0; startRow < this.size; startRow++) {
+            int tempCount = 0;
+            for (int i = 0; i < this.size - startRow; i++) {
+                if (board[startRow + i][this.size - 1 - i] == side) {
+                    tempCount++;
+                } else {
+                    tempCount = 0;
+                }
+
+                if (tempCount == this.size - this.offset) {
+                    return true;
+                }
+            }
+        }
+
+        for (int startCol = this.size - 2; startCol >= 0; startCol--) {
+            int tempCount = 0;
+            for (int i = 0; i <= startCol; i++) {
+                if (board[i][startCol - i] == side) {
+                    tempCount++;
+                } else {
+                    tempCount = 0;
+                }
+
+                if (tempCount == this.size - this.offset) {
+                    return true;
+                }
             }
         }
 

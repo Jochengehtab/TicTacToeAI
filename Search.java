@@ -1,9 +1,11 @@
+import java.util.Arrays;
+
 public class Search {
 
     int nodes = 0;
     int[] bestMove = new int[2];
 
-    public int evaluate(Board board) {
+    public int evaluate(Board board, int ply) {
         final byte xSide = 1;
         final byte oSide = 2;
 
@@ -14,20 +16,20 @@ public class Search {
             int center = board.size() / 2;
 
             if (board.get(center, center) == xSide) {
-                xEval += 5;
+                xEval += (short) (5 - ply);
             }
 
             if (board.get(center, center) == oSide) {
-                oEval += 5;
+                oEval += (short) (5 + ply);
             }
         }
 
         if (board.hasDiagonalWin(xSide) || board.hasRowColumnWin(xSide)) {
-            xEval += 30000;
+            xEval += 10000;
         }
 
         if (board.hasDiagonalWin(oSide) || board.hasRowColumnWin(oSide)) {
-            oEval += 30000;
+            oEval += 10000;
         }
 
         int diff = xEval - oEval;
@@ -38,7 +40,7 @@ public class Search {
 
         nodes++;
         if (depth == 0 || board.isGameOver()) {
-            return evaluate(board);
+            return evaluate(board, ply);
         }
 
         int bestScore = -30000;
@@ -63,6 +65,7 @@ public class Search {
 
     public int[] getBestMove(Board board, int depth) {
         negamax(board, depth, 0);
+        System.out.println("Bestmove: " + Arrays.toString(bestMove));
         return bestMove;
     }
 }
