@@ -115,29 +115,30 @@ public class Board {
     }
 
     public boolean hasRowColumnWin(byte side) {
-        boolean isWon = false;
         for (int i = 0; i < this.size; i++) {
 
-            int isPlacedRow = 0;
-            int isPlacedColumn = 0;
-
+            int consecutiveRow = 0;
+            int consecutiveCol = 0;
             for (int j = 0; j < this.size; j++) {
                 if (board[i][j] == side) {
-                    isPlacedRow++;
+                    consecutiveRow++;
+                } else {
+                    consecutiveRow = 0;
                 }
-
                 if (board[j][i] == side) {
-                    isPlacedColumn++;
+                    consecutiveCol++;
+                } else {
+                    consecutiveCol = 0;
                 }
-            }
 
-            if (isPlacedRow == this.size - this.offset || isPlacedColumn == this.size - this.offset) {
-                isWon = true;
-                break;
+                if (consecutiveRow == this.size - this.offset || consecutiveCol == this.size - this.offset) {
+                    return true;
+                }
             }
         }
-        return isWon;
+        return false;
     }
+
 
     public boolean isGameOver() {
         if ( hasRowColumnWin((byte) 1) || hasDiagonalWin((byte) 1)) {

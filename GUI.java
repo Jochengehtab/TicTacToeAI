@@ -122,7 +122,7 @@ public class GUI extends JFrame {
             }
 
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board, 3);
+            int[] bestMove = search.getBestMove(board, 8);
 
             // Make the move
             board.makeMove(bestMove);

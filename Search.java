@@ -16,11 +16,11 @@ public class Search {
             int center = board.size() / 2;
 
             if (board.get(center, center) == xSide) {
-                xEval += (short) (5 - ply);
+                xEval += 5;
             }
 
             if (board.get(center, center) == oSide) {
-                oEval += (short) (5 + ply);
+                oEval += 5;
             }
         }
 
@@ -36,7 +36,7 @@ public class Search {
         return (board.getSideToMove() == 2 ? -diff : diff);
     }
 
-    public int negamax(Board board, int depth, int ply) {
+    public int negamax(Board board, int depth, int ply, int alpha, int beta) {
 
         nodes++;
         if (depth == 0 || board.isGameOver()) {
@@ -49,14 +49,23 @@ public class Search {
         for (int[] move : legalMoves) {
             board.makeMove(move);
 
-            int score = -negamax(board, depth - 1, ply + 1);
+            int score = -negamax(board, depth - 1, ply + 1, -beta, -alpha);
 
             board.unmakeMove(move);
 
             if (score > bestScore) {
                 bestScore = score;
+
+                if (score > alpha) {
+                    alpha = score;
+                }
+
                 if (ply == 0) {
                     bestMove = move;
+                }
+
+                if (score >= beta) {
+                    return bestScore;
                 }
             }
         }
@@ -64,7 +73,7 @@ public class Search {
     }
 
     public int[] getBestMove(Board board, int depth) {
-        negamax(board, depth, 0);
+        negamax(board, depth, 0, -30000, 30000);
         System.out.println("Bestmove: " + Arrays.toString(bestMove));
         return bestMove;
     }

@@ -50,6 +50,13 @@ public class UnitTests {
 
         board.setBoardNotation("0000000010000010000000000o");
         Assertions.assertFalse(board.hasDiagonalWin((byte) 1));
+
+        board = new Board(5, 1);
+        board.setBoardNotation("0000100001000000000100001o");
+        Assertions.assertFalse(board.hasRowColumnWin((byte) 1));
+
+        board.setBoardNotation("0000100001000010000100000o");
+        Assertions.assertTrue(board.hasRowColumnWin((byte) 1));
     }
 
     @Test
