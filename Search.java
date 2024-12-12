@@ -106,9 +106,34 @@ public class Search {
         System.out.println("NPS   : " + Math.round(nodeCount / elapsedTimeSeconds));
     }
 
+    public int[] getBestMove(Board board, long thinkTime) {
+        int[] tempBestMove = new int[2];
+        nodes = 0;
+        int searchDepth = 1;
+
+        long startTime = System.currentTimeMillis();
+
+        while (!((System.currentTimeMillis() - startTime) >= thinkTime)) {
+
+            negamax(board, searchDepth, 0, -30000, 30000);
+            tempBestMove = this.bestMove;
+            searchDepth++;
+
+            if (searchDepth == 256) {
+                break;
+            }
+        }
+
+        System.out.println("Depth: " + searchDepth);
+        System.out.println("Nodes: " + nodes);
+
+        return tempBestMove;
+    }
+
     public int[] getBestMove(Board board, int depth) {
         nodes = 0;
-        negamax(board, depth, 0, -30000, 30000);
+        int score = negamax(board, depth, 0, -30000, 30000);
+        System.out.println("Score: " + score);
         return bestMove;
     }
 }

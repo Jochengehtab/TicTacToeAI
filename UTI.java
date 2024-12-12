@@ -77,6 +77,19 @@ public class UTI {
             } catch (NumberFormatException e) {
                 throw new RuntimeException("Invalid number entered as oInc");
             }
+
+            int timeForMove;
+
+            String notation = board.getBoardNotation();
+
+            if (notation.charAt(notation.length() - 1) == 'x') {
+                timeForMove = xTime / 20 + (xInc / 2);
+            } else {
+                timeForMove = oTime / 20 + (oInc / 2);
+            }
+
+            System.out.println("bestmove " + Arrays.toString(search.getBestMove(board, (long) timeForMove)));
+
         } else {
             throw new RuntimeException("Invalid input for the go command: " + token);
         }

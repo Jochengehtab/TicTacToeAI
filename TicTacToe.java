@@ -4,7 +4,7 @@ public class TicTacToe {
 
     public static void main(String[] args) {
         final int SIZE = 10;
-        final int OFFSET = 4;
+        final int OFFSET = 7;
 
         Board board = new Board(SIZE, OFFSET);
         GUI gui = new GUI(SIZE, board);
