@@ -1,7 +1,7 @@
 public class Board {
     private final byte[][] board;
     private final int size;
-    private final int offset;
+    private int offset;
 
     private byte sideToMove = 1;
 
@@ -29,6 +29,20 @@ public class Board {
     public void unmakeMove(int[] move) {
         board[move[0]][move[1]] = 0;
         updateTurn();
+    }
+
+    public boolean hasWinWithFurtherOffset(int offset, byte side){
+
+        int tempOffset = this.offset;
+        this.offset += offset;
+
+        if (hasDiagonalWin(side) || hasRowColumnWin(side)) {
+            this.offset = tempOffset;
+            return true;
+        }
+
+        this.offset = tempOffset;
+        return false;
     }
 
     public int[][] generateLegalMoves() {

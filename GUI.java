@@ -3,8 +3,6 @@ import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Arrays;
-
 public class GUI extends JFrame {
 
     private final JButton[][] buttons;
@@ -67,11 +65,32 @@ public class GUI extends JFrame {
             }
         });
 
+        JButton botGame = new JButton("Bot game");
+        botGame.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
+                new Thread(() -> playGame()).start();
+            }
+        });
+
+        JButton playAgainstBot = new JButton("Play against Bot");
+        playAgainstBot.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
+                new Thread(() -> playAgainstBot()).start();
+                System.out.println("Now playing against the bot");
+            }
+        });
+
         // Add everything to the panel
         debugPanel.add(importBoardNotation);
         debugPanel.add(getExportBoardNotation(board));
         debugPanel.add(resetButton);
         debugPanel.add(boardNotationInput);
+        debugPanel.add(botGame);
+        debugPanel.add(playAgainstBot);
         debugPanel.add(shouldCopy);
 
         // Add all features to the panel
@@ -82,28 +101,6 @@ public class GUI extends JFrame {
         add(panel);
         setSize(size * size, size * size);
         pack();
-
-        // Diagonal Position
-        //printBestMoveFromPosition("200010000x");
-
-        // Tricky Position
-        // printBestMoveFromPosition("121000000o");
-
-        new Thread(this::playAgainstBot).start();
-        //new Thread(this::playGame).start();
-    }
-
-    @SuppressWarnings("unused")
-    private void printBestMoveFromPosition(@SuppressWarnings("SameParameterValue") String notation) {
-        setBoardNotation(notation);
-
-        // Get the bestmove
-        int[] bestMove = search.getBestMove(board, 2);
-
-        System.out.println("The bestmove is: " + Arrays.toString(bestMove));
-
-        board.makeMove(bestMove);
-        setBoardNotation(board.getBoardNotation());
     }
 
     @SuppressWarnings("unused")
@@ -111,26 +108,25 @@ public class GUI extends JFrame {
 
         // Play until the board is full
         while (!board.isFull() && !board.isGameOver()) {
+
+            // Get the bestmove
+            int[] bestMove = search.getBestMove(board, 10);
+
+            // Make the move
+            board.makeMove(bestMove);
+
+            // Update the board
+            setBoardNotation(board.getBoardNotation());
+
             // Wait for the player to make an input
             try {
-                while (board.getSideToMove() == 1) {
+                while (board.getSideToMove() == 2) {
                     //noinspection BusyWait
                     Thread.sleep(500);
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-
-            // Get the bestmove
-            int[] bestMove = search.getBestMove(board, 8);
-
-            // Make the move
-            board.makeMove(bestMove);
-
-            System.out.println(board);
-
-            // Update the board
-            setBoardNotation(board.getBoardNotation());
         }
     }
 
@@ -141,9 +137,9 @@ public class GUI extends JFrame {
     private void playGame() {
 
         // Play until the board is full
-        while (!board.isFull()) {
+        while (!board.isFull() && !board.isGameOver()) {
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board, 4);
+            int[] bestMove = search.getBestMove(board, 8);
 
             // Make the move
             board.makeMove(bestMove);

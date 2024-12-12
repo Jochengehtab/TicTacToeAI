@@ -1,4 +1,5 @@
 import java.util.Arrays;
+import java.util.Objects;
 
 public class Search {
 
@@ -12,24 +13,20 @@ public class Search {
         short xEval = 0;
         short oEval = 0;
 
-        if (board.size() % 2 == 1) {
-            int center = board.size() / 2;
+        if (board.hasWinWithFurtherOffset(1, xSide)) {
+            xEval += 50;
+        }
 
-            if (board.get(center, center) == xSide) {
-                xEval += 5;
-            }
-
-            if (board.get(center, center) == oSide) {
-                oEval += 5;
-            }
+        if (board.hasWinWithFurtherOffset(1, oSide)) {
+            oEval += 50;
         }
 
         if (board.hasDiagonalWin(xSide) || board.hasRowColumnWin(xSide)) {
-            xEval += 10000;
+            xEval += (short) (10000 - ply);
         }
 
         if (board.hasDiagonalWin(oSide) || board.hasRowColumnWin(oSide)) {
-            oEval += 10000;
+            oEval += (short) (10000 - ply);
         }
 
         int diff = xEval - oEval;
@@ -46,11 +43,21 @@ public class Search {
         int bestScore = -30000;
         int[][] legalMoves = board.generateLegalMoves();
 
-        for (int[] move : legalMoves) {
+        for (int i = 0; i < legalMoves.length; i++) {
+
+            int[] move = legalMoves[i];
+
             board.makeMove(move);
 
-            int score = -negamax(board, depth - 1, ply + 1, -beta, -alpha);
-
+            int score;
+            if (i == 0) {
+                score = -negamax(board, depth - 1, ply + 1, -beta, -alpha);
+            } else {
+                score = -negamax(board, depth - 1, ply + 1, -alpha-1, -alpha);
+                if ( score > alpha && beta - alpha > 1 ) {
+                    score = -negamax(board, depth - 1, ply + 1, -beta, -alpha);
+                }
+            }
             board.unmakeMove(move);
 
             if (score > bestScore) {
@@ -73,8 +80,10 @@ public class Search {
     }
 
     public int[] getBestMove(Board board, int depth) {
-        negamax(board, depth, 0, -30000, 30000);
-        System.out.println("Bestmove: " + Arrays.toString(bestMove));
+        nodes = 0;
+        int score = negamax(board, depth, 0, -30000, 30000);
+        System.out.println("Score: " + score);
+        System.out.println("Nodes: " + nodes);
         return bestMove;
     }
 }

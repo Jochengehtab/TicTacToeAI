@@ -1,6 +1,8 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
 public class UnitTests {
     private final Search search = new Search();
     private Board board;
@@ -57,6 +59,15 @@ public class UnitTests {
 
         board.setBoardNotation("0000100001000010000100000o");
         Assertions.assertTrue(board.hasRowColumnWin((byte) 1));
+
+        board.setBoardNotation("2121212121211222112000210o");
+        Assertions.assertTrue(board.hasDiagonalWin((byte) 1) && !board.hasDiagonalWin((byte) 2));
+
+        board.setBoardNotation("2121212121211222112000220x");
+        System.out.println(Arrays.deepToString(board.generateLegalMoves()));
+
+        board.setBoardNotation("2202211101000000000000000o");
+        Assertions.assertFalse(board.hasDiagonalWin((byte) 1) && board.hasDiagonalWin((byte) 2));
     }
 
     @Test
