@@ -7,6 +7,8 @@ public class UTI {
     private final static Search search = new Search();
     private static final Board board = new Board(10, 7);
 
+    private static int xTime, xInc, oTime, oInc;
+
     public static void main(String[] args) {
         if (args.length != 0 && Objects.equals(args[0], "bench"))  {
             new Search().bench();
@@ -32,7 +34,8 @@ public class UTI {
         }
     }
 
-    private static void handleGo(String token) {
+    private static void handleGo(String t) {
+        String token = t;
         if (token.contains("depth")) {
             String depthValueStr = token.substring(token.indexOf("depth") + 5).trim();
 
@@ -43,7 +46,39 @@ public class UTI {
                 throw new RuntimeException("Invalid number entered as depth");
             }
         } else if (token.contains("xTime")) {
+            String time = token.substring(token.indexOf("xTime ") + 5).trim();
+            time = time.split("\\s+")[0];
+            try {
+                xTime = Integer.parseInt(time);
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("Invalid number entered as xTime");
+            }
 
+            time = token.substring(token.indexOf("oTime ") + 5).trim();
+            time = time.split("\\s+")[0];
+            try {
+                oTime = Integer.parseInt(time);
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("Invalid number entered as oTime");
+            }
+
+            time = token.substring(token.indexOf("xInc ") + 5).trim();
+            time = time.split("\\s+")[0];
+            try {
+                xInc = Integer.parseInt(time);
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("Invalid number entered as xInc");
+            }
+
+            time = token.substring(token.indexOf("oInc ") + 5).trim();
+            time = time.split("\\s+")[0];
+            try {
+                oInc = Integer.parseInt(time);
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("Invalid number entered as oInc");
+            }
+        } else {
+            throw new RuntimeException("Invalid input for the go command: " + token);
         }
     }
 }
