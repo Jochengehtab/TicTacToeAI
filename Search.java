@@ -79,11 +79,36 @@ public class Search {
         return bestScore;
     }
 
+    public void bench() {
+
+        long startTime = System.currentTimeMillis();
+
+        Board board = new Board(10, 7);
+        int nodeCount = 0;
+
+        board.setBoardNotation("0000000000000000200000001000000200000010000100020000000000000001000100000000000000002000000000000000o");
+        getBestMove(board, 5);
+        nodeCount += this.nodes;
+
+        board.setBoardNotation("0000000000002000010000001102210000020100001000201000202000000012011020000021201000200000000000000000o");
+        getBestMove(board, 5);
+        nodeCount += this.nodes;
+
+        board.setBoardNotation("0000000000010010200001201000100200202000000010002000001200000020000010002000000000100000000000000000x");
+        getBestMove(board, 5);
+        nodeCount += this.nodes;
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        double elapsedTimeSeconds = elapsedTime / 1000.0;
+
+        System.out.println("Time  : " + elapsedTime + " ms");
+        System.out.println("Nodes : " + nodeCount);
+        System.out.println("NPS   : " + Math.round(nodeCount / elapsedTimeSeconds));
+    }
+
     public int[] getBestMove(Board board, int depth) {
         nodes = 0;
-        int score = negamax(board, depth, 0, -30000, 30000);
-        System.out.println("Score: " + score);
-        System.out.println("Nodes: " + nodes);
+        negamax(board, depth, 0, -30000, 30000);
         return bestMove;
     }
 }

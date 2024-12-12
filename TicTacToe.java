@@ -3,8 +3,8 @@ import javax.swing.*;
 public class TicTacToe {
 
     public static void main(String[] args) {
-        final int SIZE = 5;
-        final int OFFSET = 1;
+        final int SIZE = 10;
+        final int OFFSET = 4;
 
         Board board = new Board(SIZE, OFFSET);
         GUI gui = new GUI(SIZE, board);
