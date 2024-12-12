@@ -44,8 +44,8 @@ public class GUI extends JFrame {
 
         importBoardNotation.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
 
                 String input = boardNotationInput.getText();
                 if (input.isEmpty()) {
@@ -57,9 +57,20 @@ public class GUI extends JFrame {
             }
         });
 
+        JButton resetButton = new JButton("Reset");
+        resetButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
+                board.reset();
+                setBoardNotation(board.getBoardNotation());
+            }
+        });
+
         // Add everything to the panel
         debugPanel.add(importBoardNotation);
         debugPanel.add(getExportBoardNotation(board));
+        debugPanel.add(resetButton);
         debugPanel.add(boardNotationInput);
         debugPanel.add(shouldCopy);
 
@@ -73,13 +84,13 @@ public class GUI extends JFrame {
         pack();
 
         // Diagonal Position
-        // printBestMoveFromPosition("100010000o");
+        //printBestMoveFromPosition("200010000x");
 
         // Tricky Position
         // printBestMoveFromPosition("121000000o");
 
-        // new Thread(this::playAgainstBot).start();
-        // new Thread(this::playGame).start();
+        new Thread(this::playAgainstBot).start();
+        //new Thread(this::playGame).start();
     }
 
     @SuppressWarnings("unused")
@@ -87,7 +98,7 @@ public class GUI extends JFrame {
         setBoardNotation(notation);
 
         // Get the bestmove
-        int[] bestMove = search.getBestMove(board, 1000);
+        int[] bestMove = search.getBestMove(board, 2);
 
         System.out.println("The bestmove is: " + Arrays.toString(bestMove));
 
@@ -99,7 +110,7 @@ public class GUI extends JFrame {
     private void playAgainstBot() {
 
         // Play until the board is full
-        while (!board.isFull()) {
+        while (!board.isFull() && !board.isGameOver()) {
             // Wait for the player to make an input
             try {
                 while (board.getSideToMove() == 1) {
@@ -111,10 +122,12 @@ public class GUI extends JFrame {
             }
 
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board, 1000);
+            int[] bestMove = search.getBestMove(board, 8);
 
             // Make the move
             board.makeMove(bestMove);
+
+            System.out.println(board);
 
             // Update the board
             setBoardNotation(board.getBoardNotation());
@@ -130,7 +143,7 @@ public class GUI extends JFrame {
         // Play until the board is full
         while (!board.isFull()) {
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board, 1000);
+            int[] bestMove = search.getBestMove(board, 4);
 
             // Make the move
             board.makeMove(bestMove);
@@ -155,8 +168,8 @@ public class GUI extends JFrame {
         // Add the mouse listener
         exportBoardNotation.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
 
                 // Get the board notation
                 String input = board.getBoardNotation();
@@ -200,8 +213,8 @@ public class GUI extends JFrame {
         // Add the mouse listener
         button.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
 
                 // Update the text
                 buttons[button.i][button.j].setText(board.getSideToMove() == 1 ? "X" : "O");

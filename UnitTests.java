@@ -7,6 +7,8 @@ public class UnitTests {
 
     @Test
     public void test3x3() {
+        board = new Board(3, 0);
+
         board = execute("121000000o", 99);
         Assertions.assertEquals("121020000x", board.getBoardNotation());
 
@@ -19,6 +21,42 @@ public class UnitTests {
         board.setBoardNotation(boardNotation);
         board.makeMove(search.getBestMove(board, depth));
         return board;
+    }
+
+    @Test
+    public void testOffset3x3() {
+        board = new Board(3, 1);
+        board.setBoardNotation("000010100o");
+        Assertions.assertTrue(board.hasDiagonalWin((byte) 1));
+        Assertions.assertFalse(board.hasDiagonalWin((byte) 2));
+
+        board.setBoardNotation("100010000o");
+        Assertions.assertTrue(board.hasDiagonalWin((byte) 1));
+        Assertions.assertFalse(board.hasDiagonalWin((byte) 2));
+
+        board.setBoardNotation("002020000x");
+        Assertions.assertTrue(board.hasDiagonalWin((byte) 2));
+        Assertions.assertFalse(board.hasDiagonalWin((byte) 1));
+    }
+
+    @Test
+    public void testOffset() {
+        board = new Board(5, 2);
+        board.setBoardNotation("0010000010000210000020000x");
+        Assertions.assertTrue(board.hasDiagonalWin((byte) 1));
+
+        board.setBoardNotation("0000000010002010200020000x");
+        Assertions.assertTrue(board.hasDiagonalWin((byte) 2));
+
+        board.setBoardNotation("0000000010000010000000000o");
+        Assertions.assertFalse(board.hasDiagonalWin((byte) 1));
+
+        board = new Board(5, 1);
+        board.setBoardNotation("0000100001000000000100001o");
+        Assertions.assertFalse(board.hasRowColumnWin((byte) 1));
+
+        board.setBoardNotation("0000100001000010000100000o");
+        Assertions.assertTrue(board.hasRowColumnWin((byte) 1));
     }
 
     @Test

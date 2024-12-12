@@ -84,6 +84,16 @@ public class Board {
         return board[i][j];
     }
 
+    public void reset() {
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                board[i][j] = 0;
+            }
+        }
+
+        this.sideToMove = 1;
+    }
+
     public int[] getSortedMove(int[][] legalMoves, int[] scores, int i) {
         for (int j = i + 1; j < legalMoves.length; j++) {
             if (scores[j] > scores[i]) {
@@ -105,72 +115,104 @@ public class Board {
     }
 
     public boolean hasRowColumnWin(byte side) {
-        boolean isWon = false;
         for (int i = 0; i < this.size; i++) {
 
             int isPlacedRow = 0;
             int isPlacedColumn = 0;
-
             for (int j = 0; j < this.size; j++) {
                 if (board[i][j] == side) {
                     isPlacedRow++;
+                } else {
+                    isPlacedRow = 0;
                 }
 
                 if (board[j][i] == side) {
                     isPlacedColumn++;
+                } else {
+                    isPlacedColumn = 0;
+                }
+
+                if (isPlacedRow == this.size - this.offset || isPlacedColumn == this.size - this.offset) {
+                    return true;
                 }
             }
-
-            if (isPlacedRow == this.size || isPlacedColumn == this.size) {
-                isWon = true;
-                break;
-            }
         }
-        return isWon;
+        return false;
     }
 
+
     public boolean isGameOver() {
-        if (hasDiagonalWin((byte) 1) || hasRowColumnWin((byte) 1)) {
+        if (hasRowColumnWin((byte) 1) || hasDiagonalWin((byte) 1)) {
             return true;
         }
-        if (hasDiagonalWin((byte) 2) || hasRowColumnWin((byte) 2)) {
+        if (hasRowColumnWin((byte) 2) || hasDiagonalWin((byte) 2)) {
             return true;
         }
         return isFull();
     }
 
     public boolean hasDiagonalWin(byte side) {
+        for (int startRow = 0; startRow < this.size; startRow++) {
+            int tempCount = 0;
+            for (int i = 0; i < this.size - startRow; i++) {
+                if (board[startRow + i][i] == side) {
+                    tempCount++;
+                } else {
+                    tempCount = 0;
+                }
 
-        int sum = 0;
-
-        // Top left to bottom right
-        for (int i = 0; i < this.size; i++) {
-            if (board[i][i] == side) {
-                sum++;
+                if (tempCount == this.size - this.offset) {
+                    return true;
+                }
             }
         }
 
-        // Check if we got a win
-        if (sum == this.size - this.offset) {
-            return true;
-        }
+        for (int startCol = 1; startCol < this.size; startCol++) {
+            int tempCount = 0;
+            for (int i = 0; i < this.size - startCol; i++) {
+                if (board[i][startCol + i] == side) {
+                    tempCount++;
+                } else {
+                    tempCount = 0;
+                }
 
-        // Reset sum
-        sum = 0;
-
-        // This value gets incremented while i gets decremented
-        int indexHelper = 0;
-
-        // Top right to bottom left
-        for (int i = this.size - 1; i > -1; i--) {
-            if (board[indexHelper][i] == side) {
-                sum++;
+                if (tempCount == this.size - this.offset) {
+                    return true;
+                }
             }
-            indexHelper++;
         }
 
-        // Check if we got a win
-        return sum == this.size - this.offset;
+        for (int startRow = 0; startRow < this.size; startRow++) {
+            int tempCount = 0;
+            for (int i = 0; i < this.size - startRow; i++) {
+                if (board[startRow + i][this.size - 1 - i] == side) {
+                    tempCount++;
+                } else {
+                    tempCount = 0;
+                }
+
+                if (tempCount == this.size - this.offset) {
+                    return true;
+                }
+            }
+        }
+
+        for (int startCol = this.size - 2; startCol >= 0; startCol--) {
+            int tempCount = 0;
+            for (int i = 0; i <= startCol; i++) {
+                if (board[i][startCol - i] == side) {
+                    tempCount++;
+                } else {
+                    tempCount = 0;
+                }
+
+                if (tempCount == this.size - this.offset) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public boolean isFull() {
