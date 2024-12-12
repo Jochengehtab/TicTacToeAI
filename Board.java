@@ -117,21 +117,22 @@ public class Board {
     public boolean hasRowColumnWin(byte side) {
         for (int i = 0; i < this.size; i++) {
 
-            int consecutiveRow = 0;
-            int consecutiveCol = 0;
+            int isPlacedRow = 0;
+            int isPlacedColumn = 0;
             for (int j = 0; j < this.size; j++) {
                 if (board[i][j] == side) {
-                    consecutiveRow++;
+                    isPlacedRow++;
                 } else {
-                    consecutiveRow = 0;
-                }
-                if (board[j][i] == side) {
-                    consecutiveCol++;
-                } else {
-                    consecutiveCol = 0;
+                    isPlacedRow = 0;
                 }
 
-                if (consecutiveRow == this.size - this.offset || consecutiveCol == this.size - this.offset) {
+                if (board[j][i] == side) {
+                    isPlacedColumn++;
+                } else {
+                    isPlacedColumn = 0;
+                }
+
+                if (isPlacedRow == this.size - this.offset || isPlacedColumn == this.size - this.offset) {
                     return true;
                 }
             }
@@ -141,7 +142,7 @@ public class Board {
 
 
     public boolean isGameOver() {
-        if ( hasRowColumnWin((byte) 1) || hasDiagonalWin((byte) 1)) {
+        if (hasRowColumnWin((byte) 1) || hasDiagonalWin((byte) 1)) {
             return true;
         }
         if (hasRowColumnWin((byte) 2) || hasDiagonalWin((byte) 2)) {
