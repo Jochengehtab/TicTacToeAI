@@ -110,7 +110,7 @@ public class GUI extends JFrame {
         while (!board.isFull() && !board.isGameOver()) {
 
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board, 3);
+            int[] bestMove = search.getBestMove(board, 6);
 
             // Make the move
             board.makeMove(bestMove);

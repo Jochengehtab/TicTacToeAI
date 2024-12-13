@@ -7,11 +7,9 @@ public class UTI {
     private final static Search search = new Search();
     private static final Board board = new Board(10, 7);
 
-    private static int xTime, xInc, oTime, oInc;
-
     public static void main(String[] args) {
-        if (args.length != 0 && Objects.equals(args[0], "bench"))  {
-            new Search().bench();
+        if (args.length != 0 && Objects.equals(args[0], "bench")) {
+            search.bench();
             return;
         }
 
@@ -20,12 +18,13 @@ public class UTI {
         while (scanner.hasNext()) {
             String token = scanner.nextLine();
 
-            if (token.equals("token")) {
+            if (token.equals("stop")) {
+                System.exit(0);
                 break;
             } else if (token.equals("bench")) {
                 search.bench();
             } else if (token.contains("go")) {
-                handleGo(token);
+                new Thread(() -> handleGo(token)).start();
             } else if (token.contains("position")) {
                 board.setBoardNotation(token.substring(token.indexOf("pos") + 8).trim());
             } else if (token.equals("d")) {
@@ -34,8 +33,7 @@ public class UTI {
         }
     }
 
-    private static void handleGo(String t) {
-        String token = t;
+    private static void handleGo(String token) {
         if (token.contains("depth")) {
             String depthValueStr = token.substring(token.indexOf("depth") + 5).trim();
 
@@ -48,6 +46,7 @@ public class UTI {
         } else if (token.contains("xTime")) {
             String time = token.substring(token.indexOf("xTime ") + 5).trim();
             time = time.split("\\s+")[0];
+            int xTime;
             try {
                 xTime = Integer.parseInt(time);
             } catch (NumberFormatException e) {
@@ -56,6 +55,7 @@ public class UTI {
 
             time = token.substring(token.indexOf("oTime ") + 5).trim();
             time = time.split("\\s+")[0];
+            int oTime;
             try {
                 oTime = Integer.parseInt(time);
             } catch (NumberFormatException e) {
@@ -64,6 +64,7 @@ public class UTI {
 
             time = token.substring(token.indexOf("xInc ") + 5).trim();
             time = time.split("\\s+")[0];
+            int xInc;
             try {
                 xInc = Integer.parseInt(time);
             } catch (NumberFormatException e) {
@@ -72,6 +73,7 @@ public class UTI {
 
             time = token.substring(token.indexOf("oInc ") + 5).trim();
             time = time.split("\\s+")[0];
+            int oInc;
             try {
                 oInc = Integer.parseInt(time);
             } catch (NumberFormatException e) {
