@@ -16,10 +16,15 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
 public class Search {
 
     int nodes = 0;
     int[] bestMove = new int[2];
+    private boolean isNormalSearch = true;
+    private long startTime;
+    private long thinkTime;
+    private boolean shouldStop = false;
 
     public int evaluate(Board board, int ply) {
         final byte xSide = 1;
@@ -50,9 +55,31 @@ public class Search {
 
     public int negamax(Board board, int depth, int ply, int alpha, int beta) {
 
+
+        if (shouldStop) {
+            return beta;
+        }
+
+        if (!isNormalSearch) {
+            if (nodes % 4096 == 0) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                if (elapsed > thinkTime) {
+                    shouldStop = true;
+                }
+            }
+        }
+
+        int staticEval = evaluate(board, ply);
+
         nodes++;
         if (depth == 0 || board.isGameOver()) {
-            return evaluate(board, ply);
+            return staticEval;
+        }
+
+        //Reverse futility pruning
+        if (depth <= 4 && staticEval - 72 * depth >= beta)
+        {
+            return (staticEval + beta) / 2;
         }
 
         int bestScore = -30000;
@@ -96,7 +123,8 @@ public class Search {
 
     public void bench() {
 
-        long startTime = System.currentTimeMillis();
+        startTime = System.currentTimeMillis();
+        shouldStop = false;
 
         Board board = new Board(10, 7);
         int nodeCount = 0;
@@ -123,25 +151,28 @@ public class Search {
 
     public int[] getBestMove(Board board, long thinkTime) {
         int[] tempBestMove = new int[2];
+
+        if (thinkTime < 0) {
+            negamax(board, 1, 0, -30000, 30000);
+            return this.bestMove;
+        }
+        this.thinkTime = thinkTime;
+        isNormalSearch = false;
+        shouldStop = false;
         nodes = 0;
-        int searchDepth = 1;
+        startTime = System.currentTimeMillis();
 
-        long startTime = System.currentTimeMillis();
+        System.out.println(thinkTime);
 
-        while (!((System.currentTimeMillis() - startTime) >= thinkTime)) {
-
-            negamax(board, searchDepth, 0, -30000, 30000);
-            tempBestMove = this.bestMove;
-            searchDepth++;
-
-            if (searchDepth == 256) {
+        for (int i = 1; i < 256; i++) {
+            negamax(board, i, 0, -30000, 30000);
+            if (shouldStop) {
                 break;
             }
+            tempBestMove = this.bestMove;
         }
-
-        System.out.println("Depth: " + searchDepth);
-        System.out.println("Nodes: " + nodes);
-
+        isNormalSearch = true;
+        shouldStop = false;
         return tempBestMove;
     }
 

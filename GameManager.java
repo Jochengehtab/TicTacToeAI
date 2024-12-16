@@ -1,3 +1,22 @@
+/*
+    TicTacToeAI
+    Copyright (C) 2024 Jochengehtab
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -6,35 +25,56 @@ import java.util.Random;
 public class GameManager {
 
     private final Random random = new Random();
-    Engine firstEngine = new Engine();
-    Engine secondEngine = new Engine();
+    private final Engine firstEngine = new Engine();
+    private final Engine secondEngine = new Engine();
 
     public static void main(String[] args) {
+
+        // Init everything
         GameManager gameManager = new GameManager();
-        gameManager.firstEngine.openEngine("base.jar");
+        Elo elo = new Elo();
+        LLR llr = new LLR();
+
+        // IMPORTANT first engine should always be the dev version
+        gameManager.firstEngine.openEngine("dev.jar");
         gameManager.secondEngine.openEngine("base.jar");
 
-        System.out.println(Arrays.toString(gameManager.playGame()));
+        int[] games = new int[3];
+        double currentLLR;
+        while (true) {
+            int[] game = gameManager.playGame();
+            games[0] += game[0];
+            games[1] += game[1];
+            games[2] += game[2];
+            currentLLR = llr.getLLR(games[0], games[1], games[2]);
+
+            System.out.println("LLR        : " + currentLLR);
+            System.out.println("ELO        : " + elo.getElo(games[0], games[2], games[1]));
+            System.out.println("Games      : " + Arrays.toString(games));
+            System.out.println();
+
+            if (currentLLR >= 2.91) {
+                break;
+            }
+            if (currentLLR <= -2.91) {
+                break;
+            }
+        }
 
         gameManager.firstEngine.close();
         gameManager.secondEngine.close();
     }
 
-
-    /**
-     * Plays a game pair
-     * @return The wdl (devWin / draw/ devLosses)
-     */
-    private int[] playGame(){
+    private int[] playGame() {
         int[] wdl = new int[3];
-        Board board = new Board(10, 7);
+        Board board = new Board(10, 6);
 
         boolean isValidBoard = false;
-
         String boardNotation = "";
 
         // Generate a random position
         while (!isValidBoard) {
+            board.reset();
             for (int i = 0; i < 6; i++) {
                 int[][] legalMoves = board.generateLegalMoves();
                 board.makeMove(legalMoves[random.nextInt(legalMoves.length - 1)]);
@@ -51,17 +91,17 @@ public class GameManager {
         int xInc = 8;
         int oInc = 8;
 
-        long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();;
 
         while (!board.isGameOver()) {
             firstEngine.sendCommand("position " + board.getBoardNotation());
             firstEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
             makeMove(board, firstEngine);
-
             xTime -= (int) (System.currentTimeMillis() - startTime);
+            xTime += xInc;
 
-            if (board.isGameOver())  {
-                wdl[0] += 1;
+            if (board.hasDiagonalWin((byte) (board.getSideToMove() == 1 ? 2 : 1)) || board.hasRowColumnWin((byte) (board.getSideToMove() == 1 ? 2 : 1))) {
+                wdl[2] += 1;
                 break;
             }
 
@@ -73,11 +113,11 @@ public class GameManager {
             secondEngine.sendCommand("position " + board.getBoardNotation());
             secondEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
             makeMove(board, secondEngine);
-
             oTime -= (int) (System.currentTimeMillis() - startTime);
+            oTime += oInc;
 
-            if (board.isGameOver())  {
-                wdl[2] += 1;
+            if (board.hasDiagonalWin((byte) (board.getSideToMove() == 1 ? 2 : 1)) || board.hasRowColumnWin((byte) (board.getSideToMove() == 1 ? 2 : 1))) {
+                wdl[0] += 1;
                 break;
             }
 
@@ -87,20 +127,24 @@ public class GameManager {
             }
         }
 
+        if (Arrays.equals(wdl, new int[]{0, 0, 0})) {
+            return wdl;
+        }
+
         // Reset everything
         board.setBoardNotation(boardNotation);
+
         startTime = System.currentTimeMillis();
 
         while (!board.isGameOver()) {
-
             secondEngine.sendCommand("position " + board.getBoardNotation());
             secondEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
             makeMove(board, secondEngine);
-
             xTime -= (int) (System.currentTimeMillis() - startTime);
+            xTime += xInc;
 
-            if (board.isGameOver())  {
-                wdl[2] += 1;
+            if (board.hasDiagonalWin((byte) (board.getSideToMove() == 1 ? 2 : 1)) || board.hasRowColumnWin((byte) (board.getSideToMove() == 1 ? 2 : 1))) {
+                wdl[0] += 1;
                 break;
             }
 
@@ -108,15 +152,15 @@ public class GameManager {
                 wdl[1] += 1;
                 break;
             }
-
+            ;
             firstEngine.sendCommand("position " + board.getBoardNotation());
             firstEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
             makeMove(board, firstEngine);
-
             oTime -= (int) (System.currentTimeMillis() - startTime);
+            oTime += oInc;
 
-            if (board.isGameOver())  {
-                wdl[0] += 1;
+            if (board.hasDiagonalWin((byte) (board.getSideToMove() == 1 ? 2 : 1)) || board.hasRowColumnWin((byte) (board.getSideToMove() == 1 ? 2 : 1))) {
+                wdl[2] += 1;
                 break;
             }
 
@@ -130,7 +174,8 @@ public class GameManager {
     }
 
     private void makeMove(Board board, Engine engine) {
-        String bestMoveLine = engine.getOutput("bestmove").getLast();
+        ArrayList<String> output = engine.getOutput("bestmove");
+        String bestMoveLine = output.getLast();
         String[] numbers = bestMoveLine.substring(bestMoveLine.indexOf("[") + 1, bestMoveLine.indexOf("]")).split(", ");
         board.makeMove(Integer.parseInt(numbers[0]), Integer.parseInt(numbers[1]));
     }
@@ -223,6 +268,80 @@ public class GameManager {
                     throw new RuntimeException(e);
                 }
             }
+        }
+    }
+
+    private final static class LLR {
+
+        // Important: This is heavily inspired by fastchess
+        public double getLLR(int win, int draw, int loss) {
+            int zeroCount = (win == 0 ? 1 : 0) + (draw == 0 ? 1 : 0) + (loss == 0 ? 1 : 0);
+
+            double regularize = (zeroCount >= 2 ? 1 : 0);
+
+            double games = win + draw + loss + 1.5 * regularize;
+
+            // If we got no games, we can't calculate a wdl
+            if (games == 0) {
+                return 0.0;
+            }
+
+            double W = (win + 0.5 * regularize) / games;
+            double D = (draw + 0.5 * regularize) / games;
+            double L = (loss + 0.5 * regularize) / games;
+
+            double score0;
+            double score1;
+
+            double score = W + 0.5 * D;
+            double variance = (W * Math.pow((1 - score), 2)) + (D * Math.pow((0.5 - score), 2)) + (L * Math.pow((0 - score), 2));
+
+            // If we don't get any variance, we return 0.0
+            if (variance == 0) {
+                return 0.0;
+            }
+
+            double elo0 = 0.0;
+            double elo1 = 5.0;
+
+            score0 = nEloToScoreWDL(elo0, variance);
+            score1 = nEloToScoreWDL(elo1, variance);
+
+            double variance0 = (W * Math.pow((1 - score0), 2)) + (D * Math.pow((0.5 - score0), 2)) + (L * Math.pow((0 - score0), 2));
+            double variance1 = (W * Math.pow((1 - score1), 2)) + (D * Math.pow((0.5 - score1), 2)) + (L * Math.pow((0 - score1), 2));
+
+            if (variance0 == 0 || variance1 == 0) {
+                return 0.0;
+            }
+
+            // For more information: http://hardy.uhasselt.be/Fishtest/support_MLE_multinomial.pdf
+            return Math.round((0.5 * games * Math.log(variance0 / variance1)) * 100.0) / 100.0;
+        }
+        public double nEloToScoreWDL(double nElo, double variance) {
+            return nElo * Math.sqrt(variance) / (800.0 /Math.log(10)) + 0.5;
+        }
+    }
+
+    private final static class Elo {
+        // Important: This is heavily inspired by fastchess
+        private String getElo(int wins, int losses, int draws) {
+            StringBuilder elo = new StringBuilder();
+
+            int total = wins + losses + draws;
+            elo.append(Math.round(((float) (-400 * Math.log(1 / ((wins + (float) draws / 2) / total) - 1) / Math.log(10))) * 100.0) / 100.0);
+
+            double score = ((double) wins / total) + 0.5 * ((double) draws / total);
+            double variance = ((double) wins / total) * Math.pow(1 - score, 2) + (double) (draws / total) * Math.pow(0.5 - score, 2) + (double) losses / total * Math.pow(-score, 2);
+            final double CONST = 1.959963984540054d;
+            double holder = CONST * Math.sqrt(variance / total);
+
+            // Append the error margin
+            elo.append(" +- ").append(Math.round(((scoreToEloDiff(score + holder) - scoreToEloDiff(score - holder)) / 2.0) * 100.0) / 100.0);
+            return elo.toString();
+        }
+
+        private double scoreToEloDiff(double score) {
+            return -400.0 * Math.log10(1.0 / score - 1.0);
         }
     }
 }
