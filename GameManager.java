@@ -29,13 +29,9 @@ public class GameManager {
     private final Engine secondEngine = new Engine();
 
     public static void main(String[] args) {
-
-        // Init everything
         GameManager gameManager = new GameManager();
         Elo elo = new Elo();
         LLR llr = new LLR();
-
-        // IMPORTANT first engine should always be the dev version
         gameManager.firstEngine.openEngine("dev.jar");
         gameManager.secondEngine.openEngine("base.jar");
 
@@ -46,10 +42,15 @@ public class GameManager {
             games[0] += game[0];
             games[1] += game[1];
             games[2] += game[2];
-            currentLLR = llr.getLLR(games[0], games[1], games[2]);
+
+            int wins = games[2];
+            int draws = games[1];
+            int losses = games[0];
+
+            currentLLR = llr.getLLR(wins, draws, losses);
 
             System.out.println("LLR        : " + currentLLR);
-            System.out.println("ELO        : " + elo.getElo(games[0], games[2], games[1]));
+            System.out.println("ELO        : " + elo.getElo(wins, losses, draws));
             System.out.println("Games      : " + Arrays.toString(games));
             System.out.println();
 
@@ -75,7 +76,7 @@ public class GameManager {
         // Generate a random position
         while (!isValidBoard) {
             board.reset();
-            for (int i = 0; i < 6; i++) {
+            for (int i = 0; i < 4; i++) {
                 int[][] legalMoves = board.generateLegalMoves();
                 board.makeMove(legalMoves[random.nextInt(legalMoves.length - 1)]);
             }
@@ -91,7 +92,7 @@ public class GameManager {
         int xInc = 8;
         int oInc = 8;
 
-        long startTime = System.currentTimeMillis();;
+        long startTime = System.currentTimeMillis();
 
         while (!board.isGameOver()) {
             firstEngine.sendCommand("position " + board.getBoardNotation());
@@ -127,10 +128,6 @@ public class GameManager {
             }
         }
 
-        if (Arrays.equals(wdl, new int[]{0, 0, 0})) {
-            return wdl;
-        }
-
         // Reset everything
         board.setBoardNotation(boardNotation);
 
@@ -152,7 +149,7 @@ public class GameManager {
                 wdl[1] += 1;
                 break;
             }
-            ;
+
             firstEngine.sendCommand("position " + board.getBoardNotation());
             firstEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
             makeMove(board, firstEngine);
@@ -228,8 +225,7 @@ public class GameManager {
         }
 
         /**
-         * Reads the output from the running process.
-         *
+         * Reads the output from the running process.s
          * @return A list of output lines from the process.
          */
         public ArrayList<String> getOutput(String stopSignal) {

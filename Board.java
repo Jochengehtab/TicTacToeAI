@@ -16,6 +16,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import java.util.Arrays;
+
 public class Board {
     private final byte[][] board;
     private final int size;
@@ -49,6 +51,19 @@ public class Board {
         updateTurn();
     }
 
+    public void unmakeMove(int x, int y) {
+        board[x][y] = 0;
+        updateTurn();
+    }
+
+    public void makeNullMove() {
+        updateTurn();
+    }
+
+    public void unmakeNullMove() {
+        updateTurn();
+    }
+
     public boolean hasWinWithFurtherOffset(int offset, byte side){
 
         int tempOffset = this.offset;
@@ -61,6 +76,44 @@ public class Board {
 
         this.offset = tempOffset;
         return false;
+    }
+
+    public int[][] generateNoiseMoves(byte sideToMove) {
+
+        int arraySize = 0;
+        for (int i = 0; i < this.size; i++) {
+            for (int j = 0; j < this.size; j++) {
+                byte token = board[i][j];
+                if (token == 0) {
+                    makeMove(i, j);
+                    if (hasRowColumnWin(sideToMove) || hasDiagonalWin(sideToMove)) {
+
+                        arraySize++;
+                    }
+                    unmakeMove(i, j);
+                }
+            }
+        }
+
+        int[][] legalMoves = new int[arraySize][2];
+
+        int counter = 0;
+        for (int i = 0; i < this.size; i++) {
+            for (int j = 0; j < this.size; j++) {
+                byte token = board[i][j];
+                if (token == 0) {
+                    makeMove(i, j);
+                    if (hasRowColumnWin(sideToMove) || hasDiagonalWin(sideToMove)) {
+
+                        legalMoves[counter][0] = i;
+                        legalMoves[counter][1] = j;
+                        counter++;
+                    }
+                    unmakeMove(i, j);
+                }
+            }
+        }
+        return legalMoves;
     }
 
     public int[][] generateLegalMoves() {
@@ -91,39 +144,19 @@ public class Board {
         return legalMoves;
     }
 
-    public int[] scoreMoves(int[][] legalMoves) {
+    public int[] scoreMoves(int[][] legalMoves, int[] killer) {
 
         int[] scores = new int[legalMoves.length];
 
         for (int i = 0; i < legalMoves.length; i++) {
-            makeMove(legalMoves[i]);
-
-            if (hasRowColumnWin(this.sideToMove) || hasDiagonalWin(this.sideToMove)) {
-                scores[i] = 100000;
+            if (Arrays.equals(legalMoves[i], killer)) {
+                scores[i] = 500000;
+            } else {
+                scores[i] = 0;
             }
-
-            if (isFull()) {
-                scores[i] = 1;
-            }
-
-            unmakeMove(legalMoves[i]);
         }
 
         return scores;
-    }
-
-    public byte get(int i, int j) {
-        return board[i][j];
-    }
-
-    public void reset() {
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                board[i][j] = 0;
-            }
-        }
-
-        this.sideToMove = 1;
     }
 
     public int[] getSortedMove(int[][] legalMoves, int[] scores, int i) {
@@ -140,6 +173,16 @@ public class Board {
         }
 
         return legalMoves[i];
+    }
+
+    public void reset() {
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                board[i][j] = 0;
+            }
+        }
+
+        this.sideToMove = 1;
     }
 
     public void updateTurn() {
@@ -313,10 +356,6 @@ public class Board {
 
     public byte getSideToMove() {
         return sideToMove;
-    }
-
-    public int size() {
-        return this.size;
     }
 
     @Override

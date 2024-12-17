@@ -23,7 +23,7 @@ import java.util.Scanner;
 public class UTI {
 
     private final static Search search = new Search();
-    private static final Board board = new Board(10, 7);
+    private static final Board board = new Board(10, 6);
 
     public static void main(String[] args) {
         if (args.length != 0 && Objects.equals(args[0], "bench")) {

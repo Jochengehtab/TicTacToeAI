@@ -127,8 +127,17 @@ public class GUI extends JFrame {
         // Play until the board is full
         while (!board.isFull() && !board.isGameOver()) {
 
+            // Wait for the player to make an input
+            try {
+                while (board.getSideToMove() == 1) {
+                    //noinspection BusyWait
+                    Thread.sleep(500);
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board, 8);
+            int[] bestMove = search.getBestMove(board, (long) 8000);
 
             // Make the move
             board.makeMove(bestMove);
@@ -136,15 +145,6 @@ public class GUI extends JFrame {
             // Update the board
             setBoardNotation(board.getBoardNotation());
 
-            // Wait for the player to make an input
-            try {
-                while (board.getSideToMove() == 2) {
-                    //noinspection BusyWait
-                    Thread.sleep(500);
-                }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 
@@ -153,11 +153,12 @@ public class GUI extends JFrame {
      */
     @SuppressWarnings("unused")
     private void playGame() {
+        System.out.println("Playing a bot game");
 
         // Play until the board is full
         while (!board.isFull() && !board.isGameOver()) {
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board, 8);
+            int[] bestMove = search.getBestMove(board, 6);
 
             // Make the move
             board.makeMove(bestMove);
@@ -233,6 +234,12 @@ public class GUI extends JFrame {
                 // Update the text
                 buttons[button.i][button.j].setText(board.getSideToMove() == 1 ? "X" : "O");
 
+                if (board.getSideToMove() == 1) {
+                    buttons[button.i][button.j].setBackground(Color.RED);
+                } else {
+                    buttons[button.i][button.j].setBackground(Color.GREEN);
+                }
+
                 // Make the move on the actual board
                 board.makeMove(button.i, button.j);
 
@@ -260,10 +267,13 @@ public class GUI extends JFrame {
                 counter++;
                 if (token == '1') {
                     buttons[i][j].setText("X");
+                    buttons[i][j].setBackground(Color.RED);
                 } else if (token == '2') {
                     buttons[i][j].setText("O");
+                    buttons[i][j].setBackground(Color.GREEN);
                 } else {
                     buttons[i][j].setText("-");
+                    buttons[i][j].setBackground(null);
                 }
             }
         }
