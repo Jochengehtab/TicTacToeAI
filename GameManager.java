@@ -226,6 +226,7 @@ public class GameManager {
 
         /**
          * Reads the output from the running process.s
+         *
          * @return A list of output lines from the process.
          */
         public ArrayList<String> getOutput(String stopSignal) {
@@ -313,8 +314,9 @@ public class GameManager {
             // For more information: http://hardy.uhasselt.be/Fishtest/support_MLE_multinomial.pdf
             return Math.round((0.5 * games * Math.log(variance0 / variance1)) * 100.0) / 100.0;
         }
+
         public double nEloToScoreWDL(double nElo, double variance) {
-            return nElo * Math.sqrt(variance) / (800.0 /Math.log(10)) + 0.5;
+            return nElo * Math.sqrt(variance) / (800.0 / Math.log(10)) + 0.5;
         }
     }
 

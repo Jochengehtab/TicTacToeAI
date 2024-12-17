@@ -64,7 +64,7 @@ public class Board {
         updateTurn();
     }
 
-    public boolean hasWinWithFurtherOffset(int offset, byte side){
+    public boolean hasWinWithFurtherOffset(int offset, byte side) {
 
         int tempOffset = this.offset;
         this.offset += offset;

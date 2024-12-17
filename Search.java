@@ -17,17 +17,15 @@
 */
 
 
-import java.util.Arrays;
-
 public class Search {
 
+    private final Stack[] stack = new Stack[256];
     int nodes = 0;
     int[] bestMove = new int[2];
     private boolean isNormalSearch = true;
     private long startTime;
     private long thinkTime;
     private boolean shouldStop = false;
-    private final Stack[] stack = new Stack[256];
 
     public int evaluate(Board board, int ply) {
         final byte xSide = 1;
@@ -81,8 +79,7 @@ public class Search {
         int staticEval = evaluate(board, ply);
 
         //Reverse futility pruning
-        if (depth <= 4 && staticEval - 72 * depth >= beta)
-        {
+        if (depth <= 4 && staticEval - 72 * depth >= beta) {
             return (staticEval + beta) / 2;
         }
 
@@ -115,8 +112,8 @@ public class Search {
             if (i == 0) {
                 score = -negamax(board, depth - 1, ply + 1, -beta, -alpha);
             } else {
-                score = -negamax(board, depth - 1, ply + 1, -alpha-1, -alpha);
-                if ( score > alpha && beta - alpha > 1 ) {
+                score = -negamax(board, depth - 1, ply + 1, -alpha - 1, -alpha);
+                if (score > alpha && beta - alpha > 1) {
                     score = -negamax(board, depth - 1, ply + 1, -beta, -alpha);
                 }
             }
@@ -145,11 +142,11 @@ public class Search {
     private int qs(Board board, int alpha, int beta, int ply) {
         int standPat = evaluate(board, ply);
 
-        if(standPat >= beta) {
+        if (standPat >= beta) {
             return beta;
         }
 
-        if(alpha < standPat) {
+        if (alpha < standPat) {
             alpha = standPat;
         }
 
@@ -221,9 +218,9 @@ public class Search {
         int amount = 10;
         int nps = 0;
         for (int i = 0; i < amount; i++) {
-            nps += bench();;
+            nps += bench();
         }
-        System.out.println("Average speed of " + amount + " Benchmarks is: " +  Math.round((float) nps / amount) + " NPS");
+        System.out.println("Average speed of " + amount + " Benchmarks is: " + Math.round((float) nps / amount) + " NPS");
     }
 
     public int[] getBestMove(Board board, long thinkTime) {
