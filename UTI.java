@@ -23,7 +23,7 @@ import java.util.Scanner;
 public class UTI {
 
     private final static Search search = new Search();
-    private static final Board board = new Board(10, 6);
+    private static final Board board = new Board(10, 5);
 
     public static void main(String[] args) {
         if (args.length != 0 && Objects.equals(args[0], "bench")) {
@@ -35,7 +35,6 @@ public class UTI {
 
         while (scanner.hasNext()) {
             String token = scanner.nextLine();
-
             if (token.equals("stop")) {
                 System.exit(0);
                 break;
@@ -47,6 +46,8 @@ public class UTI {
                 board.setBoardNotation(token.substring(token.indexOf("pos") + 8).trim());
             } else if (token.equals("d")) {
                 System.out.println(board);
+            } else if (token.equals("speedtest")) {
+                search.speedtest();
             }
         }
     }

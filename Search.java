@@ -20,39 +20,13 @@
 public class Search {
 
     private final Stack[] stack = new Stack[256];
-    int nodes = 0;
-    int[] bestMove = new int[2];
-    private boolean isNormalSearch = true;
-    private long startTime;
-    private long thinkTime;
-    private boolean shouldStop = false;
-
-    public int evaluate(Board board, int ply) {
-        final byte xSide = 1;
-        final byte oSide = 2;
-
-        short xEval = 0;
-        short oEval = 0;
-
-        if (board.hasWinWithFurtherOffset(1, xSide)) {
-            xEval += 1000;
-        }
-
-        if (board.hasWinWithFurtherOffset(1, oSide)) {
-            oEval += 1000;
-        }
-
-        if (board.hasDiagonalWin(xSide) || board.hasRowColumnWin(xSide)) {
-            xEval += (short) (10000 - ply);
-        }
-
-        if (board.hasDiagonalWin(oSide) || board.hasRowColumnWin(oSide)) {
-            oEval += (short) (10000 - ply);
-        }
-
-        int diff = xEval - oEval;
-        return (board.getSideToMove() == 2 ? -diff : diff);
-    }
+    private int nodes = 0;
+    private int[] bestMove = new int[2];
+    private boolean isNormalSearch = true, shouldStop = false;
+    private long startTime, thinkTime;
+    public TranspositionTable transpositionTable = new TranspositionTable(16);
+    private final Evaluation evaluate = new Evaluation();
+    private final MoveOrder moveOrder = new MoveOrder();
 
     public int negamax(Board board, int depth, int ply, int alpha, int beta) {
 
@@ -71,12 +45,48 @@ public class Search {
 
         nodes++;
         if (depth == 0 || board.isGameOver()) {
-            return evaluate(board, ply);
+            return evaluate.evaluate(board, ply);
         }
 
-        boolean pvNode = beta > alpha + 1;
+        /*
+        int key = board.getKey();
 
-        int staticEval = evaluate(board, ply);
+        TranspositionTable.Entry entry = transpositionTable.probe(key);
+        int hashedScore = 0;
+        byte hashedType = 0;
+        int hashedDepth = 0;
+        int[] hashedMove = new int[0];
+        int staticEval = -200000;
+        if (entry != null) {
+            if (entry.key() == key) {
+                hashedScore = transpositionTable.scoreFromTT(entry.score(), ply);
+                hashedType = entry.type();
+                hashedDepth = entry.depth();
+                staticEval = entry.staticEval();
+                hashedMove = entry.move();
+            }
+
+            //Check if we can return a stored score
+            if (hashedDepth >= depth && ply > 0 && key == entry.key())
+            {
+                if ((hashedType == TranspositionTable.EXACT) ||
+                        (hashedType == TranspositionTable.UPPER_BOUND && hashedScore <= alpha) ||
+                        (hashedType == TranspositionTable.LOWER_BOUND && hashedScore >= beta))
+                {
+                    return hashedScore;
+                }
+            }
+        }
+
+        if (staticEval == -200000) {
+            staticEval = evaluate(board, ply);
+        }
+
+         */
+
+        int staticEval = evaluate.evaluate(board, ply);
+
+        boolean pvNode = beta > alpha + 1;
 
         //Reverse futility pruning
         if (depth <= 4 && staticEval - 72 * depth >= beta) {
@@ -100,11 +110,14 @@ public class Search {
 
         int bestScore = -30000;
         int[][] legalMoves = board.generateLegalMoves();
-        int[] scores = board.scoreMoves(legalMoves, stack[ply].killer);
+        int[] scores = moveOrder.scoreMoves(legalMoves, stack[ply].killer/*, hashedMove*/);
+        int[] bestMovePVS = new int[0];
+
+        byte type = TranspositionTable.LOWER_BOUND;
 
         for (int i = 0; i < legalMoves.length; i++) {
 
-            int[] move = board.getSortedMove(legalMoves, scores, i);
+            int[] move = moveOrder.getSortedMove(legalMoves, scores, i);
 
             board.makeMove(move);
 
@@ -124,6 +137,8 @@ public class Search {
 
                 if (score > alpha) {
                     alpha = score;
+                    bestMovePVS = move;
+                    type = TranspositionTable.EXACT;
                 }
 
                 if (ply == 0) {
@@ -136,11 +151,32 @@ public class Search {
                 }
             }
         }
+
+        /*
+        byte finalType;
+
+        //Calculate the node type
+        if (bestScore >= beta) {
+            finalType = TranspositionTable.LOWER_BOUND;
+        }
+        else if (pvNode && (type == TranspositionTable.EXACT)) {
+            finalType = TranspositionTable.EXACT;
+        }
+        else {
+            finalType = TranspositionTable.UPPER_BOUND;
+        }
+
+
+        transpositionTable.write(board.getKey(), finalType, staticEval, transpositionTable.scoreToTT(bestScore, ply),
+        bestMovePVS, depth);
+
+
+         */
         return bestScore;
     }
 
     private int qs(Board board, int alpha, int beta, int ply) {
-        int standPat = evaluate(board, ply);
+        int standPat = evaluate.evaluate(board, ply);
 
         if (standPat >= beta) {
             return beta;
@@ -183,18 +219,21 @@ public class Search {
         shouldStop = false;
         short benchDepth = 6;
 
-        Board board = new Board(10, 6);
+        Board board = new Board(10, 5);
         int nodeCount = 0;
 
-        board.setBoardNotation("0000000000000000200000001000000200000010000100020000000000000001000100000000000000002000000000000000o");
+        board.setBoardNotation("0000000000000000200000001000000200000010000100020000000000000001000100000000000000002" +
+                "000000000000000o");
         getBestMove(board, benchDepth);
         nodeCount += this.nodes;
 
-        board.setBoardNotation("0000000000002000010000001102210000020100001000201000202000000012011020000021201000200000000000000000o");
+        board.setBoardNotation("0000000000002000010000001102210000020100001000201000202000000012011020000021201000200" +
+                "000000000000000o");
         getBestMove(board, benchDepth);
         nodeCount += this.nodes;
 
-        board.setBoardNotation("0000000000010010200001201000100200202000000010002000001200000020000010002000000000100000000000000000x");
+        board.setBoardNotation("0000000000010010200001201000100200202000000010002000001200000020000010002000000000100" +
+                "000000000000000x");
         getBestMove(board, benchDepth);
         nodeCount += this.nodes;
 
@@ -215,12 +254,13 @@ public class Search {
     }
 
     public void speedtest() {
-        int amount = 10;
+        int amount = 20;
         int nps = 0;
         for (int i = 0; i < amount; i++) {
             nps += bench();
         }
-        System.out.println("Average speed of " + amount + " Benchmarks is: " + Math.round((float) nps / amount) + " NPS");
+        System.out.println("Average speed of " + amount + " Benchmarks is: " + Math.round((float) nps / amount) +
+                " NPS");
     }
 
     public int[] getBestMove(Board board, long thinkTime) {

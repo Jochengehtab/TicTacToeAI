@@ -32,7 +32,6 @@ public class GUI extends JFrame {
     private final Search search = new Search();
 
     public GUI(int size, Board board) {
-
         this.buttons = new CustomButton[size][size];
         this.board = board;
         this.size = size;
@@ -138,7 +137,7 @@ public class GUI extends JFrame {
                 throw new RuntimeException(e);
             }
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board, (long) 8000);
+            int[] bestMove = search.getBestMove(board, (long) 1500);
 
             // Make the move
             board.makeMove(bestMove);

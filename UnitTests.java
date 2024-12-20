@@ -129,4 +129,19 @@ public class UnitTests {
         board.setBoardNotation("1222201100001000001000001o");
         Assertions.assertTrue(board.hasDiagonalWin((byte) 1));
     }
+
+    @Test
+    public void testTranspositionTable() {
+        TranspositionTable transpositionTable = new TranspositionTable(8);
+        transpositionTable.write(200, (byte) 2, 9, 20000, new int[]{5, 5}, 9);
+        TranspositionTable.Entry probed = transpositionTable.probe(200);
+        Assertions.assertEquals(9, probed.staticEval());
+        Assertions.assertEquals(20000, probed.score());
+        Assertions.assertArrayEquals(probed.move(), new int[]{5, 5});
+
+        board = new Board(10, 6);
+        board.setBoardNotation("2000000001000000001010000000000000002000002000000000200000000001000020000001000000000000002000000001x");
+        Assertions.assertEquals(1592120758, board.getKey());
+        Assertions.assertNull(transpositionTable.probe(2));
+    }
 }

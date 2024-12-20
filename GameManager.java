@@ -27,16 +27,33 @@ public class GameManager {
     private final Random random = new Random();
     private final Engine firstEngine = new Engine();
     private final Engine secondEngine = new Engine();
+    private final String FIRST_NAME = "dev.jar";
+    private final String SECOND_NAME = "base.jar";
 
     public static void main(String[] args) {
         GameManager gameManager = new GameManager();
         Elo elo = new Elo();
         LLR llr = new LLR();
-        gameManager.firstEngine.openEngine("dev.jar");
-        gameManager.secondEngine.openEngine("base.jar");
+
+        //noinspection ConstantValue
+        if (gameManager.FIRST_NAME.equals(gameManager.SECOND_NAME)) {
+            System.err.println("The two engines are the same!");
+        }
+
+        gameManager.firstEngine.openEngine(gameManager.FIRST_NAME);
+        gameManager.secondEngine.openEngine(gameManager.SECOND_NAME);
 
         int[] games = new int[3];
+        /*
+        Resume form checkpoint
+
+        games[0] = 2166;
+        games[1] = 2;
+        games[2] = 2230;
+         */
+
         double currentLLR;
+
         while (true) {
             int[] game = gameManager.playGame();
             games[0] += game[0];
@@ -54,9 +71,10 @@ public class GameManager {
             System.out.println("Games      : " + Arrays.toString(games));
             System.out.println();
 
-            if (currentLLR >= 2.91) {
+            if (currentLLR >= 2.95) {
                 break;
             }
+
             if (currentLLR <= -2.91) {
                 break;
             }
@@ -68,7 +86,7 @@ public class GameManager {
 
     private int[] playGame() {
         int[] wdl = new int[3];
-        Board board = new Board(10, 6);
+        Board board = new Board(10, 5);
 
         boolean isValidBoard = false;
         String boardNotation = "";

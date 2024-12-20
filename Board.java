@@ -19,9 +19,10 @@
 import java.util.Arrays;
 
 public class Board {
-    private final byte[][] board;
-    private final int size;
+    private byte[][] board;
+    private int size;
     private int offset;
+    private int squaresOcc;
 
     private byte sideToMove = 1;
 
@@ -29,6 +30,7 @@ public class Board {
         board = new byte[size][size];
         this.size = size;
         this.offset = offset;
+        this.squaresOcc = 0;
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 board[i][j] = 0;
@@ -62,6 +64,20 @@ public class Board {
 
     public void unmakeNullMove() {
         updateTurn();
+    }
+
+    public void resize(int size) {
+        if (size >= this.size / 2) {
+            return;
+        }
+        byte[][] newBoard = new byte[this.size - 2 * size][this.size - 2 * size];
+
+        for (int i = 0; i < newBoard.length; i++) {
+            System.arraycopy(board[i + size], size, newBoard[i], 0, newBoard[i].length);
+        }
+
+        this.board = newBoard;
+        this.size = newBoard.length;
     }
 
     public boolean hasWinWithFurtherOffset(int offset, byte side) {
@@ -144,37 +160,6 @@ public class Board {
         return legalMoves;
     }
 
-    public int[] scoreMoves(int[][] legalMoves, int[] killer) {
-
-        int[] scores = new int[legalMoves.length];
-
-        for (int i = 0; i < legalMoves.length; i++) {
-            if (Arrays.equals(legalMoves[i], killer)) {
-                scores[i] = 500000;
-            } else {
-                scores[i] = 0;
-            }
-        }
-
-        return scores;
-    }
-
-    public int[] getSortedMove(int[][] legalMoves, int[] scores, int i) {
-        for (int j = i + 1; j < legalMoves.length; j++) {
-            if (scores[j] > scores[i]) {
-                int[] temp = legalMoves[j];
-                legalMoves[j] = legalMoves[i];
-                legalMoves[i] = temp;
-
-                int temp2 = scores[j];
-                scores[j] = scores[i];
-                scores[i] = temp2;
-            }
-        }
-
-        return legalMoves[i];
-    }
-
     public void reset() {
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -229,6 +214,9 @@ public class Board {
     public boolean hasDiagonalWin(byte side) {
         for (int startRow = 0; startRow < this.size; startRow++) {
             int tempCount = 0;
+            int tempCount2 = 0;
+            int tempCount3 = 0;
+
             for (int i = 0; i < this.size - startRow; i++) {
                 if (board[startRow + i][i] == side) {
                     tempCount++;
@@ -239,34 +227,26 @@ public class Board {
                 if (tempCount == this.size - this.offset) {
                     return true;
                 }
-            }
-        }
 
-        for (int startCol = 1; startCol < this.size; startCol++) {
-            int tempCount = 0;
-            for (int i = 0; i < this.size - startCol; i++) {
-                if (board[i][startCol + i] == side) {
-                    tempCount++;
+                if (board[startRow + i][this.size - 1 - i] == side) {
+                    tempCount2++;
                 } else {
-                    tempCount = 0;
+                    tempCount2 = 0;
                 }
 
-                if (tempCount == this.size - this.offset) {
+                if (tempCount2 == this.size - this.offset) {
                     return true;
                 }
             }
-        }
 
-        for (int startRow = 0; startRow < this.size; startRow++) {
-            int tempCount = 0;
-            for (int i = 0; i < this.size - startRow; i++) {
-                if (board[startRow + i][this.size - 1 - i] == side) {
-                    tempCount++;
+            for (int i = 0; i < this.size - (startRow + 1); i++) {
+                if (board[i][startRow + i + 1] == side) {
+                    tempCount3++;
                 } else {
-                    tempCount = 0;
+                    tempCount3 = 0;
                 }
 
-                if (tempCount == this.size - this.offset) {
+                if (tempCount3 == this.size - this.offset) {
                     return true;
                 }
             }
@@ -305,6 +285,17 @@ public class Board {
         return isDraw;
     }
 
+    public int getKey() {
+        int key = 0;
+        int prime = 31;
+        for (byte[] bytes : board) {
+            for (byte aByte : bytes) {
+                key = prime * key + aByte;
+            }
+        }
+        return key;
+    }
+
     public String getBoardNotation() {
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < this.size; i++) {
@@ -325,6 +316,9 @@ public class Board {
     }
 
     public void setBoardNotation(String boardNotation) {
+
+        this.squaresOcc = 0;
+
         // Determine the side to move
         if (boardNotation.charAt(boardNotation.length() - 1) == 'x') {
             this.sideToMove = 1;
@@ -344,9 +338,11 @@ public class Board {
                         break;
                     case '1':
                         board[i][j] = 1;
+                        this.squaresOcc++;
                         break;
                     case '2':
                         board[i][j] = 2;
+                        this.squaresOcc++;
                         break;
                 }
                 inputIndex++;
@@ -381,5 +377,17 @@ public class Board {
         }
 
         return stringBuilder.toString();
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public byte get(int i, int j) {
+        return board[i][j];
+    }
+
+    public int getSquaresOcc() {
+        return squaresOcc;
     }
 }
