@@ -25,15 +25,33 @@ public class Evaluation {
         short xEval = 0;
         short oEval = 0;
 
-        // TODO test this central stuff
-        if (board.getSquaresOcc() < 3) {
-            int center = board.getSize() / 2;
-            if (board.get(center, center) == 1) {
-                xEval += 50;
-            }
+        int size = board.getSize();
+        int center = size / 2;
+        
+        /*
+        LLR        : 0.56
+        ELO        : 9.223372036854776E16 +- 0.0
+        Games      : [0, 0, 598]
+         */
 
-            if (board.get(center, center) == 2) {
-                oEval += 50;
+        // Small bonus for playing around the center
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                byte piece = board.get(i, j);
+                if (piece == 0) {
+                    continue;
+                }
+
+                int distanceToCenter = Math.abs(i - center) + Math.abs(j - center);
+
+                // 10 is the maximum bonus
+                int centralBonus = Math.max(0, 10 - distanceToCenter);
+
+                if (piece == xSide) {
+                    xEval += (short) centralBonus;
+                } else if (piece == oSide) {
+                    oEval += (short) centralBonus;
+                }
             }
         }
 

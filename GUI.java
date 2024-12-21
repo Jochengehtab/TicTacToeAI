@@ -145,6 +145,9 @@ public class GUI extends JFrame {
             // Update the board
             setBoardNotation(board.getBoardNotation());
 
+
+            // Update the turn
+            updateTurn();
         }
     }
 
@@ -165,6 +168,9 @@ public class GUI extends JFrame {
 
             // Update the board
             setBoardNotation(board.getBoardNotation());
+
+            // Update the turn
+            updateTurn();
         }
     }
 
@@ -248,6 +254,13 @@ public class GUI extends JFrame {
             }
         });
         return button;
+    }
+
+    /**
+     * Updates the turn shown on the side
+     */
+    private void updateTurn() {
+        view.setText("Turn: " + (board.getSideToMove() == 1 ? "X" : "O"));
     }
 
     /**

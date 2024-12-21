@@ -46,6 +46,7 @@ public class Search {
         nodes++;
         if (depth == 0 || board.isGameOver()) {
             return evaluate.evaluate(board, ply);
+            //return qs(board, alpha, beta, ply);
         }
 
         /*

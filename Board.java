@@ -16,6 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Board {
@@ -96,39 +97,26 @@ public class Board {
 
     public int[][] generateNoiseMoves(byte sideToMove) {
 
-        int arraySize = 0;
+        ArrayList<int[]> legalMoveList = new ArrayList<>();
+
         for (int i = 0; i < this.size; i++) {
             for (int j = 0; j < this.size; j++) {
-                byte token = board[i][j];
-                if (token == 0) {
+                if (board[i][j] == 0) {
                     makeMove(i, j);
-                    if (hasRowColumnWin(sideToMove) || hasDiagonalWin(sideToMove)) {
-
-                        arraySize++;
+                    if (hasRowColumnWin(sideToMove)) {
+                        legalMoveList.add(new int[]{i, j});
                     }
                     unmakeMove(i, j);
                 }
             }
         }
 
-        int[][] legalMoves = new int[arraySize][2];
-
-        int counter = 0;
-        for (int i = 0; i < this.size; i++) {
-            for (int j = 0; j < this.size; j++) {
-                byte token = board[i][j];
-                if (token == 0) {
-                    makeMove(i, j);
-                    if (hasRowColumnWin(sideToMove) || hasDiagonalWin(sideToMove)) {
-
-                        legalMoves[counter][0] = i;
-                        legalMoves[counter][1] = j;
-                        counter++;
-                    }
-                    unmakeMove(i, j);
-                }
-            }
+        // Convert the list to a two-dimensional Array
+        int[][] legalMoves = new int[legalMoveList.size()][2];
+        for (int k = 0; k < legalMoveList.size(); k++) {
+            legalMoves[k] = legalMoveList.get(k);
         }
+
         return legalMoves;
     }
 
