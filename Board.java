@@ -275,7 +275,7 @@ public class Board {
 
     public int getKey() {
         int key = 0;
-        int prime = 31;
+        int prime = 991;
         for (byte[] bytes : board) {
             for (byte aByte : bytes) {
                 key = prime * key + aByte;
