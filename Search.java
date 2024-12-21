@@ -49,7 +49,6 @@ public class Search {
             //return qs(board, alpha, beta, ply);
         }
 
-        /*
         int key = board.getKey();
 
         TranspositionTable.Entry entry = transpositionTable.probe(key);
@@ -58,6 +57,7 @@ public class Search {
         int hashedDepth = 0;
         int[] hashedMove = new int[0];
         int staticEval = -200000;
+
         if (entry != null) {
             if (entry.key() == key) {
                 hashedScore = transpositionTable.scoreFromTT(entry.score(), ply);
@@ -80,12 +80,10 @@ public class Search {
         }
 
         if (staticEval == -200000) {
-            staticEval = evaluate(board, ply);
+            staticEval = evaluate.evaluate(board, ply);
         }
 
-         */
 
-        int staticEval = evaluate.evaluate(board, ply);
 
         boolean pvNode = beta > alpha + 1;
 
@@ -96,7 +94,7 @@ public class Search {
 
         int bestScore = -30000;
         int[][] legalMoves = board.generateLegalMoves();
-        int[] scores = moveOrder.scoreMoves(legalMoves, stack[ply].killer/*, hashedMove*/);
+        int[] scores = moveOrder.scoreMoves(legalMoves, stack[ply].killer, hashedMove);
         int[] bestMovePVS = new int[0];
 
         byte type = TranspositionTable.LOWER_BOUND;
@@ -137,8 +135,6 @@ public class Search {
                 }
             }
         }
-
-        /*
         byte finalType;
 
         //Calculate the node type
@@ -156,8 +152,6 @@ public class Search {
         transpositionTable.write(board.getKey(), finalType, staticEval, transpositionTable.scoreToTT(bestScore, ply),
         bestMovePVS, depth);
 
-
-         */
         return bestScore;
     }
 
