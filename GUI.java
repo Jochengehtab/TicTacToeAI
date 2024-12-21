@@ -24,12 +24,14 @@ import java.awt.event.MouseEvent;
 
 public class GUI extends JFrame {
 
-    private final JButton[][] buttons;
-    private final Board board;
     private final int size;
+    private final Board board;
+    private final Search search = new Search();
+    private final JButton[][] buttons;
     private final JLabel view;
     private final JCheckBox shouldCopy = new JCheckBox("Copy text", true);
-    private final Search search = new Search();
+    private final JCheckBox isFirstTurnX = new JCheckBox("Start first", true);
+    private final JCheckBox debugBoardMode = new JCheckBox("Debug board", false);
 
     public GUI(int size, Board board) {
         this.buttons = new CustomButton[size][size];
@@ -51,7 +53,7 @@ public class GUI extends JFrame {
         }
 
         JPanel debugPanel = new JPanel();
-        debugPanel.setLayout(new GridLayout(2, 2));
+        debugPanel.setLayout(new GridLayout(3, 3));
 
         JButton importBoardNotation = new JButton("Import Board");
         importBoardNotation.setPreferredSize(new Dimension(130, 30));
@@ -110,6 +112,8 @@ public class GUI extends JFrame {
         debugPanel.add(botGame);
         debugPanel.add(playAgainstBot);
         debugPanel.add(shouldCopy);
+        debugPanel.add(isFirstTurnX);
+        debugPanel.add(debugBoardMode);
 
         // Add all features to the panel
         panel.add(debugPanel);
@@ -127,17 +131,20 @@ public class GUI extends JFrame {
         // Play until the board is full
         while (!board.isFull() && !board.isGameOver()) {
 
-            // Wait for the player to make an input
-            try {
-                while (board.getSideToMove() == 1) {
-                    //noinspection BusyWait
-                    Thread.sleep(500);
+            if (isFirstTurnX.isSelected()) {
+                // Wait for the player to make an input
+                try {
+                    while (board.getSideToMove() == 1) {
+                        //noinspection BusyWait
+                        Thread.sleep(500);
+                    }
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
             }
+
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board, (long) 1500);
+            int[] bestMove = search.getBestMove(board, (long) 5000);
 
             // Make the move
             board.makeMove(bestMove);
@@ -145,9 +152,20 @@ public class GUI extends JFrame {
             // Update the board
             setBoardNotation(board.getBoardNotation());
 
-
             // Update the turn
             updateTurn();
+
+            if (!isFirstTurnX.isSelected()) {
+                // Wait for the player to make an input
+                try {
+                    while (board.getSideToMove() == 2) {
+                        //noinspection BusyWait
+                        Thread.sleep(500);
+                    }
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
 
@@ -161,7 +179,7 @@ public class GUI extends JFrame {
         // Play until the board is full
         while (!board.isFull() && !board.isGameOver()) {
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board, 6);
+            int[] bestMove = search.getBestMove(board, (long) 3000);
 
             // Make the move
             board.makeMove(bestMove);
@@ -237,13 +255,15 @@ public class GUI extends JFrame {
             public void mousePressed(MouseEvent e) {
                 super.mousePressed(e);
 
+                JButton customButton = buttons[button.i][button.j];
+
                 // Update the text
-                buttons[button.i][button.j].setText(board.getSideToMove() == 1 ? "X" : "O");
+                customButton.setText(board.getSideToMove() == 1 ? "X" : "O");
 
                 if (board.getSideToMove() == 1) {
-                    buttons[button.i][button.j].setBackground(Color.RED);
+                    customButton.setBackground(Color.RED);
                 } else {
-                    buttons[button.i][button.j].setBackground(Color.GREEN);
+                    customButton.setBackground(Color.GREEN);
                 }
 
                 // Make the move on the actual board
@@ -251,6 +271,11 @@ public class GUI extends JFrame {
 
                 // Update the turn view
                 view.setText("Turn: " + (board.getSideToMove() == 1 ? "X" : "O"));
+
+                // If the debug mode is activated we disable the button
+                if (!debugBoardMode.isSelected()) {
+                    customButton.removeMouseListener(this);
+                }
             }
         });
         return button;
