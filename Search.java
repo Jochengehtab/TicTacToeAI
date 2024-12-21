@@ -94,21 +94,6 @@ public class Search {
             return (staticEval + beta) / 2;
         }
 
-        /*
-        if (!pvNode && depth >= 3 && staticEval >= beta)
-        {
-            board.makeNullMove();
-            int depthReduction = 3 + depth / 3;
-            int score = -negamax(board, depth - depthReduction,-beta, -alpha, ply + 1);
-            board.unmakeNullMove();
-            if (score >= beta)
-            {
-                return score;
-            }
-        }
-
-         */
-
         int bestScore = -30000;
         int[][] legalMoves = board.generateLegalMoves();
         int[] scores = moveOrder.scoreMoves(legalMoves, stack[ply].killer/*, hashedMove*/);

@@ -27,7 +27,7 @@ public class Evaluation {
 
         int size = board.getSize();
         int center = size / 2;
-        
+
         /*
         LLR        : 0.56
         ELO        : 9.223372036854776E16 +- 0.0
