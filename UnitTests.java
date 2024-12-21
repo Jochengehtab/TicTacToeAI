@@ -133,11 +133,11 @@ public class UnitTests {
     @Test
     public void testTranspositionTable() {
         TranspositionTable transpositionTable = new TranspositionTable(8);
-        transpositionTable.write(200, (byte) 2, 9, 20000, new int[]{5, 5}, 9);
+        transpositionTable.write(200, (byte) 2, 9, 20000, new int[]{5, 4}, 9);
         TranspositionTable.Entry probed = transpositionTable.probe(200);
         Assertions.assertEquals(9, probed.staticEval());
         Assertions.assertEquals(20000, probed.score());
-        Assertions.assertArrayEquals(probed.move(), new int[]{5, 5});
+        Assertions.assertArrayEquals(new int[]{5, 4}, probed.move());
 
         board = new Board(10, 6);
         board.setBoardNotation("2000000001000000001010000000000000002000002000000000200000000001000020000001000000000000002000000001x");

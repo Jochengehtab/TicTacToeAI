@@ -20,19 +20,16 @@
 import java.util.Arrays;
 
 public class MoveOrder {
-    public int[] scoreMoves(int[][] legalMoves, int[] killer/*, int[] hashedMove*/) {
+    public int[] scoreMoves(int[][] legalMoves, int[] killer, int[] hashedMove) {
 
         int[] scores = new int[legalMoves.length];
 
         for (int i = 0; i < legalMoves.length; i++) {
-            /*
             if (hashedMove != null) {
                 if (Arrays.equals(legalMoves[i], hashedMove)) {
                     scores[i] = 50000000;
                 }
             }
-
-             */
             if (Arrays.equals(legalMoves[i], killer)) {
                 scores[i] = 500000;
             } else {
