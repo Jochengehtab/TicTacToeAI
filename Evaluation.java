@@ -20,13 +20,14 @@
 public class Evaluation {
 
     private int distance = 10;
-    private int twoPlayWin = 494;
-    private int onePlayWin = 1006;
+    private int twoPlayWin = 500;
+    private int onePlayWin = 1000;
 
 
     public int evaluate(Board board, int ply) {
         final byte xSide = 1;
         final byte oSide = 2;
+        this.distance = board.getSize();
         final byte sideToMove = board.getSideToMove();
         short xEval = 0;
         short oEval = 0;

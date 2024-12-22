@@ -27,7 +27,7 @@ public class GameManager {
     private final Random random = new Random();
     private final Engine firstEngine = new Engine();
     private final Engine secondEngine = new Engine();
-    private final String FIRST_NAME = "base.jar";
+    private final String FIRST_NAME = "dev.jar";
     private final String SECOND_NAME = "base.jar";
 
     public static void main(String[] args) {
@@ -42,7 +42,7 @@ public class GameManager {
         }
 
         // Optional output the spsa output
-        gameManager.getOutputRounded(new double[]{10.272627535552276, 494.14918949741525, 1005.7045871858882, 4.265750311708344, 76.74330405637427});
+        gameManager.getOutputRounded(new double[]{10.34331409377891, 501.6085719805133, 1014.0761133151539, 4.003652106611551, 70.45577602612735});
 
         gameManager.firstEngine.openEngine(gameManager.FIRST_NAME);
         gameManager.secondEngine.openEngine(gameManager.SECOND_NAME);
@@ -50,7 +50,7 @@ public class GameManager {
         int[] games = new int[3];
         double currentLLR;
 
-        final boolean isSPSA = true;
+        final boolean isSPSA = false;
 
         //noinspection ConstantValue
         if (isSPSA) {
