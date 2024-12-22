@@ -20,13 +20,13 @@
 public class Search {
 
     private final Stack[] stack = new Stack[256];
+    private final Evaluation evaluate = new Evaluation();
+    private final MoveOrder moveOrder = new MoveOrder();
+    public TranspositionTable transpositionTable = new TranspositionTable(16);
     private int nodes = 0;
     private int[] bestMove = new int[2];
     private boolean isNormalSearch = true, shouldStop = false;
     private long startTime, thinkTime;
-    public TranspositionTable transpositionTable = new TranspositionTable(16);
-    private final Evaluation evaluate = new Evaluation();
-    private final MoveOrder moveOrder = new MoveOrder();
 
     public int negamax(Board board, int depth, int ply, int alpha, int beta) {
 
@@ -199,6 +199,34 @@ public class Search {
         return alpha;
     }
 
+    int aspiration(int depth, int score, Board board) {
+        int delta = 27;
+        int alpha = Math.max(-30000, score - delta);
+        int beta = Math.min(30000, score + delta);
+        double finalASPMultiplier = 121 / 100.0;
+
+        while (true) {
+            score = negamax(board, depth, 0, alpha, beta);
+            long elapsed = System.currentTimeMillis() - startTime;
+            if (elapsed > thinkTime) {
+                return score;
+            }
+
+            if (score >= beta) {
+                beta = Math.min(beta + delta, 30000);
+            } else if (score <= alpha) {
+                beta = (alpha + beta) / 2;
+                alpha = Math.max(alpha - delta, -30000);
+            } else {
+                break;
+            }
+
+            delta *= finalASPMultiplier;
+        }
+
+        return score;
+    }
+
     public int bench() {
         initStack();
         startTime = System.currentTimeMillis();
@@ -265,9 +293,12 @@ public class Search {
         int score = 0;
         int depth = 0;
 
+        int previousScore = 0;
+
         for (int i = 1; i < 256; i++) {
             depth = i;
-            score = negamax(board, i, 0, -30000, 30000);
+            score = i >= 6 ? aspiration(i, previousScore, board) : negamax(board, i, 0, -30000, 30000);
+            previousScore = score;
             if (shouldStop) {
                 break;
             }
