@@ -41,6 +41,9 @@ public class GameManager {
             System.err.println("The two engines are the same!");
         }
 
+        // Optional output the spsa output
+        gameManager.getOutputRounded(new double[]{10.272627535552276, 494.14918949741525, 1005.7045871858882, 4.265750311708344, 76.74330405637427});
+
         gameManager.firstEngine.openEngine(gameManager.FIRST_NAME);
         gameManager.secondEngine.openEngine(gameManager.SECOND_NAME);
 
@@ -72,6 +75,7 @@ public class GameManager {
                 i++;
 
                 double[] currentParams = tuner.getCurrentParams();
+                System.out.println("Iteration         : " + i);
                 System.out.println("Current Parameters: " + Arrays.toString(currentParams));
 
             } while (i < 8000);
@@ -482,6 +486,12 @@ public class GameManager {
 
         private double scoreToEloDiff(double score) {
             return -400.0 * Math.log10(1.0 / score - 1.0);
+        }
+    }
+
+    private void getOutputRounded(double[] input) {
+        for (double d : input) {
+            System.out.print(Math.round(d) + ", ");
         }
     }
 }

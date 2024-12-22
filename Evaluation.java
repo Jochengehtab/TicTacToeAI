@@ -21,7 +21,7 @@ public class Evaluation {
 
     private int distance = 10;
     private int twoPlayWin = 500;
-    private int onePlayWin = 500;
+    private int onePlayWin = 1000;
 
 
     public int evaluate(Board board, int ply) {

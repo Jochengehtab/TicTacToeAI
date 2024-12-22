@@ -28,7 +28,7 @@ public class Search {
     private boolean isNormalSearch = true, shouldStop = false;
     private long startTime, thinkTime;
     private int rfpDepth = 4;
-    private int rfpSub = 72;
+    private int rfpSub = 77;
 
     public int negamax(Board board, int depth, int ply, int alpha, int beta) {
 
