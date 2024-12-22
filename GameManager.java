@@ -63,12 +63,9 @@ public class GameManager {
                 // Apply these parameters to your game manager
                 gameManager.firstEngine.setParams(paramsA);
                 int[] resultsA = gameManager.playGame();
-                gameManager.secondEngine.setParams(paramsB);
-                int[] resultsB = gameManager.playGame();
 
-                // Combine results into wins, losses
-                int wins = resultsA[2] + resultsB[2];
-                int losses = resultsA[0] + resultsB[0];
+                int wins = resultsA[2];
+                int losses = resultsA[0];
 
                 // Update tuner with results
                 tuner.step(wins, losses);
