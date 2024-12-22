@@ -217,8 +217,8 @@ public class GameManager {
         private final double[] stepSizes;    // Step sizes for each parameter
         private final double a;              // Learning rate factor
         private final double c;              // Perturbation size factor
-        private int t;                       // Iteration counter
         private final double[] delta;        // Random perturbation
+        private int t;                       // Iteration counter
 
         public SPSATuner() {
             // DISTANCE | 1 - ply win | 2 - ply win | RFP DEPTH | RFP SUB
@@ -234,6 +234,7 @@ public class GameManager {
 
         /**
          * Generates perturbed parameters (A-side) for evaluation.
+         *
          * @return Perturbed parameters A.
          */
         public double[] getParamsA() {
@@ -251,6 +252,7 @@ public class GameManager {
 
         /**
          * Generates perturbed parameters (B-side) for evaluation.
+         *
          * @return Perturbed parameters B.
          */
         public double[] getParamsB() {
@@ -264,6 +266,7 @@ public class GameManager {
 
         /**
          * Updates parameters using the SPSA gradient approximation with step sizes for each parameter.
+         *
          * @param wins   Number of wins in evaluation.
          * @param losses Number of losses in evaluation.
          */
@@ -287,6 +290,7 @@ public class GameManager {
 
         /**
          * Gets the current parameters.
+         *
          * @return The current optimized parameter values.
          */
         public double[] getCurrentParams() {
