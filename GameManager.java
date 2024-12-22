@@ -27,11 +27,12 @@ public class GameManager {
     private final Random random = new Random();
     private final Engine firstEngine = new Engine();
     private final Engine secondEngine = new Engine();
-    private final String FIRST_NAME = "dev.jar";
+    private final String FIRST_NAME = "base.jar";
     private final String SECOND_NAME = "base.jar";
 
     public static void main(String[] args) {
         GameManager gameManager = new GameManager();
+        GameManager.SPSATuner tuner = new SPSATuner();
         Elo elo = new Elo();
         LLR llr = new LLR();
 
@@ -44,40 +45,59 @@ public class GameManager {
         gameManager.secondEngine.openEngine(gameManager.SECOND_NAME);
 
         int[] games = new int[3];
-        /*
-        Resume form checkpoint
-
-        games[0] = 2166;
-        games[1] = 2;
-        games[2] = 2230;
-         */
-
         double currentLLR;
 
-        while (true) {
-            int[] game = gameManager.playGame();
-            games[0] += game[0];
-            games[1] += game[1];
-            games[2] += game[2];
+        final boolean isSPSA = true;
 
-            int wins = games[2];
-            int draws = games[1];
-            int losses = games[0];
+        //noinspection ConstantValue
+        if (isSPSA) {
+            int i = 0;
+            do {
+                // Generate perturbed parameters A and B
+                double[] paramsA = tuner.getParamsA();
+                double[] paramsB = tuner.getParamsB();
 
-            currentLLR = llr.getLLR(wins, draws, losses);
+                // Apply these parameters to your game manager
+                gameManager.firstEngine.setParams(paramsA); // Assuming a method to set parameters
+                int[] resultsA = gameManager.playGame(); // Evaluate with paramsA
+                gameManager.secondEngine.setParams(paramsB);
+                int[] resultsB = gameManager.playGame(); // Evaluate with paramsB
 
-            System.out.println("LLR        : " + currentLLR);
-            System.out.println("ELO        : " + elo.getElo(wins, losses, draws));
-            System.out.println("Games      : " + Arrays.toString(games));
-            System.out.println();
+                // Combine results into wins, draws, losses
+                int wins = resultsA[2] + resultsB[2];
+                int draws = resultsA[1] + resultsB[1];
+                int losses = resultsA[0] + resultsB[0];
 
-            if (currentLLR >= 2.95) {
-                break;
-            }
+                // Update tuner with results
+                tuner.step(wins, draws, losses);
+                i++;
 
-            if (currentLLR <= -2.91) {
-                break;
-            }
+                // Print current parameters
+                double[] currentParams = tuner.getCurrentParams();
+                System.out.println("Current Parameters: " + Arrays.toString(currentParams));
+
+                // Stopping criteria
+            } while (i < 8000);
+        } else {
+            do {
+                // Play a pair of games
+                int[] game = gameManager.playGame();
+                games[0] += game[0];
+                games[1] += game[1];
+                games[2] += game[2];
+
+                int wins = games[2];
+                int draws = games[1];
+                int losses = games[0];
+
+                currentLLR = llr.getLLR(wins, draws, losses);
+
+                System.out.println("LLR        : " + currentLLR);
+                System.out.println("ELO        : " + elo.getElo(wins, losses, draws));
+                System.out.println("Games      : " + Arrays.toString(games));
+                System.out.println();
+
+            } while (!(currentLLR >= 2.95) && !(currentLLR <= -2.91));
         }
 
         gameManager.firstEngine.close();
@@ -195,6 +215,76 @@ public class GameManager {
         board.makeMove(Integer.parseInt(numbers[0]), Integer.parseInt(numbers[1]));
     }
 
+    private static class SPSATuner {
+        private final double[] params; // Parameters to optimize
+        private final double a;        // Learning rate factor
+        private final double c;        // Perturbation size factor
+        private int t;                 // Iteration counter
+        private final double[] delta;        // Random perturbation
+
+        // Constructor to initialize SPSA Tuner
+        public SPSATuner() {
+            // Initialize parameters for tuning
+            // DISTANCE | 1 - ply win | 2 - ply win | RFP DEPTH | RFP SUB
+            params = new double[]{10.0, 500.0, 1000.0, 4.0, 72.0}; // Initial values for 5 parameters
+            delta = new double[params.length];
+            a = 0.602;  // Learning rate parameter
+            c = 0.101;  // Perturbation size parameter
+            t = 1;      // Start with first iteration
+        }
+
+        /**
+         * Generates perturbed parameters (A-side) for evaluation.
+         * @return Perturbed parameters A.
+         */
+        public double[] getParamsA() {
+            for (int i = 0; i < params.length; i++) {
+                delta[i] = Math.random() - 0.5; // Generate random perturbation in range [-0.5, 0.5]
+            }
+            double[] paramsA = new double[params.length];
+            for (int i = 0; i < params.length; i++) {
+                paramsA[i] = params[i] + c * delta[i]; // Add perturbation to each parameter
+            }
+            return paramsA;
+        }
+
+        /**
+         * Generates perturbed parameters (B-side) for evaluation.
+         * @return Perturbed parameters B.
+         */
+        public double[] getParamsB() {
+            double[] paramsB = new double[params.length];
+            for (int i = 0; i < params.length; i++) {
+                paramsB[i] = params[i] - c * delta[i]; // Subtract perturbation from each parameter
+            }
+            return paramsB;
+        }
+
+        /**
+         * Updates parameters using the SPSA gradient approximation.
+         * @param wins   Number of wins in evaluation.
+         * @param draws  Number of draws in evaluation.
+         * @param losses Number of losses in evaluation.
+         */
+        public void step(int wins, int draws, int losses) {
+            double gradient = (wins - losses) / 2.0; // Simplified gradient calculation
+            double ak = a / Math.pow(t + 1, 0.602);  // Adaptive learning rate based on iteration count
+
+            for (int i = 0; i < params.length; i++) {
+                params[i] = params[i] - ak * gradient * delta[i]; // Update parameter using the approximated gradient
+            }
+            t++; // Increment iteration counter
+        }
+
+        /**
+         * Gets the current parameters.
+         * @return The current optimized parameter values.
+         */
+        public double[] getCurrentParams() {
+            return params;
+        }
+    }
+
     private final static class Engine {
         private Process process;
         private BufferedWriter commandWriter;
@@ -266,6 +356,26 @@ public class GameManager {
                 }
             }
             return outputLines;
+        }
+
+        /**
+         * Sends parameters generated by SPSA to the running process.
+         *
+         * @param params Array of parameters to be sent.
+         */
+        public void setParams(double[] params) {
+            if (process == null || !process.isAlive()) {
+                throw new IllegalStateException("No process is running.");
+            }
+
+            // Construct the parameter command
+            StringBuilder commandBuilder = new StringBuilder("spsa ");
+            for (double param : params) {
+                commandBuilder.append(param).append(" ");
+            }
+
+            // Send the parameters command
+            sendCommand(commandBuilder.toString().trim());
         }
 
         /**

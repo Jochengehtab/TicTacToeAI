@@ -48,7 +48,30 @@ public class UTI {
                 System.out.println(board);
             } else if (token.equals("speedtest")) {
                 search.speedtest();
+            } else if (token.contains("spsa")) {
+                handleSPSA(token);
             }
+        }
+    }
+
+    private static void handleSPSA(String token) {
+        try {
+            // Extract parameters from the token
+            String[] parts = token.substring(token.indexOf("spsa") + 5).trim().split("\\s+");
+            double[] params = Arrays.stream(parts)
+                    .mapToDouble(Double::parseDouble)
+                    .toArray();
+
+            search.updateParameters(params);
+
+            System.out.println("SPSA parameters updated: " + Arrays.toString(params));
+            System.out.println("Current board state: ");
+            System.out.println(board);
+
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Invalid SPSA parameters: " + token, e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error processing SPSA command: " + token, e);
         }
     }
 

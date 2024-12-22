@@ -179,7 +179,7 @@ public class GUI extends JFrame {
         // Play until the board is full
         while (!board.isFull() && !board.isGameOver()) {
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board, (long) 3000);
+            int[] bestMove = search.getBestMove(board, (long) 30000);
 
             // Make the move
             board.makeMove(bestMove);

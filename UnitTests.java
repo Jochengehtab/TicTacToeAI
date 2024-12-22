@@ -137,7 +137,7 @@ public class UnitTests {
         TranspositionTable.Entry probed = transpositionTable.probe(200);
         Assertions.assertEquals(9, probed.staticEval());
         Assertions.assertEquals(20000, probed.score());
-        Assertions.assertArrayEquals(probed.move(), new int[]{5, 5});
+        Assertions.assertArrayEquals(new int[]{5, 5}, probed.move());
 
         board = new Board(10, 6);
         board.setBoardNotation("2000000001000000001010000000000000002000002000000000200000000001000020000001000000000000002000000001x");

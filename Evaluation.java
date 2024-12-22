@@ -18,6 +18,12 @@
 
 
 public class Evaluation {
+
+    private int distance = 10;
+    private int twoPlayWin = 500;
+    private int onePlayWin = 500;
+
+
     public int evaluate(Board board, int ply) {
         final byte xSide = 1;
         final byte oSide = 2;
@@ -45,7 +51,7 @@ public class Evaluation {
                 int distanceToCenter = Math.abs(i - center) + Math.abs(j - center);
 
                 // 10 is the maximum bonus
-                int centralBonus = Math.max(0, 10 - distanceToCenter);
+                int centralBonus = Math.max(0, distance - distanceToCenter);
 
                 if (piece == xSide) {
                     xEval += (short) centralBonus;
@@ -62,19 +68,19 @@ public class Evaluation {
          */
 
         if (board.hasWinWithFurtherOffset(2, xSide)) {
-            xEval += 500;
+            xEval += (short) twoPlayWin;
         }
 
         if (board.hasWinWithFurtherOffset(2, oSide)) {
-            oEval += 500;
+            oEval += (short) twoPlayWin;
         }
 
         if (board.hasWinWithFurtherOffset(1, xSide)) {
-            xEval += 1000;
+            xEval += (short) onePlayWin;
         }
 
         if (board.hasWinWithFurtherOffset(1, oSide)) {
-            oEval += 1000;
+            oEval += (short) onePlayWin;
         }
 
         if (board.hasDiagonalWin(xSide) || board.hasRowColumnWin(xSide)) {
@@ -87,5 +93,11 @@ public class Evaluation {
 
         int diff = xEval - oEval;
         return (sideToMove == 2 ? -diff : diff);
+    }
+
+    public void updateParameters(double[] params) {
+        distance = (int) params[0];
+        twoPlayWin = (int) params[1];
+        onePlayWin = (int) params[2];
     }
 }

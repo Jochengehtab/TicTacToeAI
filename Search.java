@@ -27,6 +27,8 @@ public class Search {
     public TranspositionTable transpositionTable = new TranspositionTable(16);
     private final Evaluation evaluate = new Evaluation();
     private final MoveOrder moveOrder = new MoveOrder();
+    private int rfpDepth = 4;
+    private int rfpSub = 72;
 
     public int negamax(Board board, int depth, int ply, int alpha, int beta) {
 
@@ -90,7 +92,7 @@ public class Search {
         boolean pvNode = beta > alpha + 1;
 
         //Reverse futility pruning
-        if (depth <= 4 && staticEval - 72 * depth >= beta) {
+        if (depth <= rfpDepth && staticEval - rfpSub * depth >= beta) {
             return (staticEval + beta) / 2;
         }
 
@@ -287,5 +289,11 @@ public class Search {
         int score = negamax(board, depth, 0, -30000, 30000);
         System.out.println("Score: " + score);
         return bestMove;
+    }
+
+    public void updateParameters(double[] params) {
+        rfpDepth = (int) params[3];
+        rfpSub = (int) params[4];
+        evaluate.updateParameters(params);
     }
 }
