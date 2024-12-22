@@ -216,18 +216,23 @@ public class GameManager {
     }
 
     private static class SPSATuner {
-        private final double[] params; // Parameters to optimize
-        private final double a;        // Learning rate factor
-        private final double c;        // Perturbation size factor
-        private int t;                 // Iteration counter
+        private final double[] params;       // Parameters to optimize
+        private final double[] stepSizes;    // Step sizes for each parameter (initialized in the constructor)
+        private final double a;              // Learning rate factor
+        private final double c;              // Perturbation size factor
+        private int t;                       // Iteration counter
         private final double[] delta;        // Random perturbation
 
-        // Constructor to initialize SPSA Tuner
+        // Constructor to initialize SPSA Tuner with parameters and step sizes
         public SPSATuner() {
             // Initialize parameters for tuning
             // DISTANCE | 1 - ply win | 2 - ply win | RFP DEPTH | RFP SUB
-            params = new double[]{10.0, 500.0, 1000.0, 4.0, 72.0}; // Initial values for 5 parameters
-            delta = new double[params.length];
+            params = new double[]{10.0, 500.0, 1000.0, 4.0, 72.0};  // Initial values for 5 parameters
+
+            // Initialize step sizes for each parameter (hardcoded or calculated in constructor)
+            stepSizes = new double[]{1.0, 25.0, 100.0, 1.0, 7.0}; // Example of hardcoded step sizes for each parameter
+
+            delta = new double[params.length];  // Initialize delta for random perturbation
             a = 0.602;  // Learning rate parameter
             c = 0.101;  // Perturbation size parameter
             t = 1;      // Start with first iteration
@@ -261,7 +266,7 @@ public class GameManager {
         }
 
         /**
-         * Updates parameters using the SPSA gradient approximation.
+         * Updates parameters using the SPSA gradient approximation with step sizes for each parameter.
          * @param wins   Number of wins in evaluation.
          * @param draws  Number of draws in evaluation.
          * @param losses Number of losses in evaluation.
@@ -270,8 +275,10 @@ public class GameManager {
             double gradient = (wins - losses) / 2.0; // Simplified gradient calculation
             double ak = a / Math.pow(t + 1, 0.602);  // Adaptive learning rate based on iteration count
 
+            // Update each parameter using its corresponding step size
             for (int i = 0; i < params.length; i++) {
-                params[i] = params[i] - ak * gradient * delta[i]; // Update parameter using the approximated gradient
+                double adjustedGradient = gradient * stepSizes[i]; // Use corresponding step size for each parameter
+                params[i] = params[i] - ak * adjustedGradient * delta[i]; // Update parameter
             }
             t++; // Increment iteration counter
         }
@@ -284,6 +291,7 @@ public class GameManager {
             return params;
         }
     }
+
 
     private final static class Engine {
         private Process process;
