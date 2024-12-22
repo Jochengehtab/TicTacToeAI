@@ -58,25 +58,22 @@ public class GameManager {
                 double[] paramsB = tuner.getParamsB();
 
                 // Apply these parameters to your game manager
-                gameManager.firstEngine.setParams(paramsA); // Assuming a method to set parameters
-                int[] resultsA = gameManager.playGame(); // Evaluate with paramsA
+                gameManager.firstEngine.setParams(paramsA);
+                int[] resultsA = gameManager.playGame();
                 gameManager.secondEngine.setParams(paramsB);
-                int[] resultsB = gameManager.playGame(); // Evaluate with paramsB
+                int[] resultsB = gameManager.playGame();
 
-                // Combine results into wins, draws, losses
+                // Combine results into wins, losses
                 int wins = resultsA[2] + resultsB[2];
-                int draws = resultsA[1] + resultsB[1];
                 int losses = resultsA[0] + resultsB[0];
 
                 // Update tuner with results
-                tuner.step(wins, draws, losses);
+                tuner.step(wins, losses);
                 i++;
 
-                // Print current parameters
                 double[] currentParams = tuner.getCurrentParams();
                 System.out.println("Current Parameters: " + Arrays.toString(currentParams));
 
-                // Stopping criteria
             } while (i < 8000);
         } else {
             do {
@@ -217,25 +214,22 @@ public class GameManager {
 
     private static class SPSATuner {
         private final double[] params;       // Parameters to optimize
-        private final double[] stepSizes;    // Step sizes for each parameter (initialized in the constructor)
+        private final double[] stepSizes;    // Step sizes for each parameter
         private final double a;              // Learning rate factor
         private final double c;              // Perturbation size factor
         private int t;                       // Iteration counter
         private final double[] delta;        // Random perturbation
 
-        // Constructor to initialize SPSA Tuner with parameters and step sizes
         public SPSATuner() {
-            // Initialize parameters for tuning
             // DISTANCE | 1 - ply win | 2 - ply win | RFP DEPTH | RFP SUB
             params = new double[]{10.0, 500.0, 1000.0, 4.0, 72.0};  // Initial values for 5 parameters
 
-            // Initialize step sizes for each parameter (hardcoded or calculated in constructor)
-            stepSizes = new double[]{1.0, 25.0, 100.0, 1.0, 7.0}; // Example of hardcoded step sizes for each parameter
+            stepSizes = new double[]{1.0, 25.0, 100.0, 1.0, 7.0};
 
-            delta = new double[params.length];  // Initialize delta for random perturbation
-            a = 0.602;  // Learning rate parameter
-            c = 0.101;  // Perturbation size parameter
-            t = 1;      // Start with first iteration
+            delta = new double[params.length];
+            a = 0.602;
+            c = 0.101;
+            t = 1;
         }
 
         /**
@@ -244,11 +238,13 @@ public class GameManager {
          */
         public double[] getParamsA() {
             for (int i = 0; i < params.length; i++) {
-                delta[i] = Math.random() - 0.5; // Generate random perturbation in range [-0.5, 0.5]
+                // Generate random perturbation in range [-0.5, 0.5]
+                delta[i] = Math.random() - 0.5;
             }
             double[] paramsA = new double[params.length];
             for (int i = 0; i < params.length; i++) {
-                paramsA[i] = params[i] + c * delta[i]; // Add perturbation to each parameter
+                // Add perturbation to each parameter
+                paramsA[i] = params[i] + c * delta[i];
             }
             return paramsA;
         }
@@ -260,7 +256,8 @@ public class GameManager {
         public double[] getParamsB() {
             double[] paramsB = new double[params.length];
             for (int i = 0; i < params.length; i++) {
-                paramsB[i] = params[i] - c * delta[i]; // Subtract perturbation from each parameter
+                // Subtract perturbation from each parameter
+                paramsB[i] = params[i] - c * delta[i];
             }
             return paramsB;
         }
@@ -268,19 +265,24 @@ public class GameManager {
         /**
          * Updates parameters using the SPSA gradient approximation with step sizes for each parameter.
          * @param wins   Number of wins in evaluation.
-         * @param draws  Number of draws in evaluation.
          * @param losses Number of losses in evaluation.
          */
-        public void step(int wins, int draws, int losses) {
-            double gradient = (wins - losses) / 2.0; // Simplified gradient calculation
-            double ak = a / Math.pow(t + 1, 0.602);  // Adaptive learning rate based on iteration count
+        public void step(int wins, int losses) {
+            // Simple gradient calculation
+            double gradient = (wins - losses) / 2.0;
+            // Adaptive learning rate based on iteration count
+            double ak = a / Math.pow(t + 1, 0.602);
 
             // Update each parameter using its corresponding step size
             for (int i = 0; i < params.length; i++) {
-                double adjustedGradient = gradient * stepSizes[i]; // Use corresponding step size for each parameter
-                params[i] = params[i] - ak * adjustedGradient * delta[i]; // Update parameter
+
+                // Use corresponding step size for each parameter
+                double adjustedGradient = gradient * stepSizes[i];
+
+                // Update parameter
+                params[i] = params[i] - ak * adjustedGradient * delta[i];
             }
-            t++; // Increment iteration counter
+            t++;
         }
 
         /**
