@@ -27,7 +27,7 @@ public class GameManager {
     private final Random random = new Random();
     private final Engine firstEngine = new Engine();
     private final Engine secondEngine = new Engine();
-    private final String FIRST_NAME = "dev.jar";
+    private final String FIRST_NAME = "base.jar";
     private final String SECOND_NAME = "base.jar";
 
     public static void main(String[] args) {
@@ -111,6 +111,7 @@ public class GameManager {
         int oInc = 8;
 
         long startTime = System.currentTimeMillis();
+        String tempNot = "";
 
         while (!board.isGameOver()) {
             firstEngine.sendCommand("position " + board.getBoardNotation());
@@ -121,6 +122,7 @@ public class GameManager {
 
             if (board.hasDiagonalWin((byte) (board.getSideToMove() == 1 ? 2 : 1)) || board.hasRowColumnWin((byte) (board.getSideToMove() == 1 ? 2 : 1))) {
                 wdl[2] += 1;
+                tempNot = board.getBoardNotation();
                 break;
             }
 
@@ -137,6 +139,7 @@ public class GameManager {
 
             if (board.hasDiagonalWin((byte) (board.getSideToMove() == 1 ? 2 : 1)) || board.hasRowColumnWin((byte) (board.getSideToMove() == 1 ? 2 : 1))) {
                 wdl[0] += 1;
+                tempNot = board.getBoardNotation();
                 break;
             }
 
@@ -160,6 +163,7 @@ public class GameManager {
 
             if (board.hasDiagonalWin((byte) (board.getSideToMove() == 1 ? 2 : 1)) || board.hasRowColumnWin((byte) (board.getSideToMove() == 1 ? 2 : 1))) {
                 wdl[0] += 1;
+                System.out.println(board.getBoardNotation().equals(tempNot));
                 break;
             }
 
@@ -176,6 +180,7 @@ public class GameManager {
 
             if (board.hasDiagonalWin((byte) (board.getSideToMove() == 1 ? 2 : 1)) || board.hasRowColumnWin((byte) (board.getSideToMove() == 1 ? 2 : 1))) {
                 wdl[2] += 1;
+                System.out.println(board.getBoardNotation().equals(tempNot));
                 break;
             }
 

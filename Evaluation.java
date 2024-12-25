@@ -35,8 +35,8 @@ public class Evaluation {
          */
 
         // Small bonus for playing around the center
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
+        for (int i = center / 2; i < size; i++) {
+            for (int j = center / 2; j < size; j++) {
                 byte piece = board.get(i, j);
                 if (piece == 0) {
                     continue;
