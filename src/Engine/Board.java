@@ -16,8 +16,9 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+package src.Engine;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Board {
     private byte[][] board;

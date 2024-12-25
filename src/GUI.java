@@ -16,6 +16,12 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
+package src;
+
+import src.Engine.Board;
+import src.Engine.Search;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;

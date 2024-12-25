@@ -16,6 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+package src.Engine;
 
 public class Evaluation {
     public int evaluate(Board board, int ply) {

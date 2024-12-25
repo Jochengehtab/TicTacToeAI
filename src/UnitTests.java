@@ -16,8 +16,14 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
+package src;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import src.Engine.Board;
+import src.Engine.Search;
+import src.Engine.TranspositionTable;
 
 import java.util.Arrays;
 

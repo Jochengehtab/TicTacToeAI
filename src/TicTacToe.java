@@ -17,6 +17,10 @@
 */
 
 
+package src;
+
+import src.Engine.Board;
+
 import javax.swing.*;
 
 public class TicTacToe {

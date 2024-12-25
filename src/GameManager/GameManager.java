@@ -16,6 +16,9 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+package src.GameManager;
+
+import src.Engine.Board;
 
 import java.io.*;
 import java.util.ArrayList;

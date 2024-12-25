@@ -17,16 +17,18 @@
 */
 
 
+package src.Engine;
+
 public class Search {
 
     private final Stack[] stack = new Stack[256];
+    private final Evaluation evaluate = new Evaluation();
+    private final MoveOrder moveOrder = new MoveOrder();
+    public TranspositionTable transpositionTable = new TranspositionTable(16);
     private int nodes = 0;
     private int[] bestMove = new int[2];
     private boolean isNormalSearch = true, shouldStop = false;
     private long startTime, thinkTime;
-    public TranspositionTable transpositionTable = new TranspositionTable(16);
-    private final Evaluation evaluate = new Evaluation();
-    private final MoveOrder moveOrder = new MoveOrder();
 
     public int negamax(Board board, int depth, int ply, int alpha, int beta) {
 
