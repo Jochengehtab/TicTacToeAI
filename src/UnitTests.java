@@ -66,6 +66,18 @@ public class UnitTests {
     }
 
     @Test
+    public void testFasterRowWin() {
+        board = new Board(3, 0);
+        board.setBoardNotation("000000111o");
+        Assertions.assertTrue(board.hasRowWin((byte) 1));
+        Assertions.assertFalse(board.hasRowWin((byte) 2));
+
+        board.setBoardNotation("001001001o");
+        Assertions.assertFalse(board.hasRowWin((byte) 1));
+        Assertions.assertFalse(board.hasRowWin((byte) 2));
+    }
+
+    @Test
     public void testOffset() {
         board = new Board(5, 2);
         board.setBoardNotation("0010000010000210000020000x");

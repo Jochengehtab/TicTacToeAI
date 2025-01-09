@@ -163,6 +163,21 @@ public class Board {
         this.sideToMove = (byte) (this.sideToMove == 1 ? 2 : 1);
     }
 
+    public boolean hasRowWin(byte side) {
+        for (int i = 0; i < this.size; i++) {
+            int isPlacedRow = 0;
+            for (int j = 0; j < this.size; j++) {
+                if (board[i][j] == side) {
+                    isPlacedRow += board[i][j];
+                }
+            }
+            if ((isPlacedRow & this.size - this.offset) == this.size - this.offset) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean hasRowColumnWin(byte side) {
         for (int i = 0; i < this.size; i++) {
 

@@ -38,11 +38,13 @@ public class GameManager {
         Elo elo = new Elo();
         LLR llr = new LLR();
 
+        // This check if IntelliJ does not change the two strings when refactoring with IntelliJ
         //noinspection ConstantValue
         if (gameManager.FIRST_NAME.equals(gameManager.SECOND_NAME)) {
             System.err.println("The two engines are the same!");
         }
 
+        // Initialize the two engines
         gameManager.firstEngine.openEngine(gameManager.FIRST_NAME);
         gameManager.secondEngine.openEngine(gameManager.SECOND_NAME);
 
