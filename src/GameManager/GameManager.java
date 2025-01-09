@@ -21,21 +21,18 @@ package src.GameManager;
 import src.Engine.Board;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Random;
+import java.util.*;
 
 public class GameManager {
 
-    private final Random random = new Random();
-    private final Engine firstEngine = new Engine();
-    private final Engine secondEngine = new Engine();
-    private final String FIRST_NAME = "dev.jar";
-    private final String SECOND_NAME = "base.jar";
+    private static final Random random = new Random();
+    private final String FIRST_NAME = "C:\\Temp\\TicTacToeAI\\src\\GameManager\\dev.jar";
+    private final String SECOND_NAME = "C:\\Temp\\TicTacToeAI\\src\\GameManager\\base.jar";
+    private static final int[] games = new int[3];
 
     public static void main(String[] args) {
         GameManager gameManager = new GameManager();
-        Elo elo = new Elo();
+
         LLR llr = new LLR();
 
         //noinspection ConstantValue
@@ -43,25 +40,29 @@ public class GameManager {
             System.err.println("The two engines are the same!");
         }
 
-        gameManager.firstEngine.openEngine(gameManager.FIRST_NAME);
-        gameManager.secondEngine.openEngine(gameManager.SECOND_NAME);
-
-        int[] games = new int[3];
-        /*
-        Resume form checkpoint
-
-        games[0] = 2166;
-        games[1] = 2;
-        games[2] = 2230;
-         */
-
         double currentLLR;
 
-        while (true) {
-            int[] game = gameManager.playGame();
-            games[0] += game[0];
-            games[1] += game[1];
-            games[2] += game[2];
+        do {
+            ArrayList<Thread> threads = new ArrayList<>();
+
+            for (int i = 0; i < 5; i++) {
+                Engine firstEngine = new Engine();
+                Engine secondEngine = new Engine();
+                firstEngine.openEngine(gameManager.FIRST_NAME);
+                secondEngine.openEngine(gameManager.SECOND_NAME);
+
+                Thread thread = new Thread(() -> new GamePlayer(firstEngine, secondEngine).playGame());
+                thread.start();
+                threads.add(thread);
+            }
+
+            for (Thread thread : threads) {
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
 
             int wins = games[2];
             int draws = games[1];
@@ -69,139 +70,200 @@ public class GameManager {
 
             currentLLR = llr.getLLR(wins, draws, losses);
 
-            System.out.println("LLR        : " + currentLLR);
-            System.out.println("ELO        : " + elo.getElo(wins, losses, draws));
-            System.out.println("Games      : " + Arrays.toString(games));
-            System.out.println();
+            gameManager.logStats(currentLLR, wins, losses, draws);
 
-            if (currentLLR >= 2.95) {
-                break;
-            }
-
-            if (currentLLR <= -2.91) {
-                break;
-            }
-        }
-
-        gameManager.firstEngine.close();
-        gameManager.secondEngine.close();
+        } while (!(currentLLR >= 2.95) && !(currentLLR <= -2.95));
     }
 
-    private int[] playGame() {
-        int[] wdl = new int[3];
-        Board board = new Board(10, 5);
+    private void logStats(double currentLLR, int wins, int losses, int draws) {
+        Elo elo = new Elo();
+        String llrColor = currentLLR >= 0 ? "\u001B[32;1m" : "\u001B[31;1m";
 
-        boolean isValidBoard = false;
-        String boardNotation = "";
-
-        // Generate a random position
-        while (!isValidBoard) {
-            board.reset();
-            for (int i = 0; i < 4; i++) {
-                int[][] legalMoves = board.generateLegalMoves();
-                board.makeMove(legalMoves[random.nextInt(legalMoves.length - 1)]);
-            }
-
-            if (!board.isGameOver()) {
-                isValidBoard = true;
-                boardNotation = board.getBoardNotation();
-            }
-        }
-
-        int xTime = 8000;
-        int oTime = 8000;
-        int xInc = 8;
-        int oInc = 8;
-
-        long startTime = System.currentTimeMillis();
-
-        while (!board.isGameOver()) {
-            firstEngine.sendCommand("position " + board.getBoardNotation());
-            firstEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
-            makeMove(board, firstEngine);
-            xTime -= (int) (System.currentTimeMillis() - startTime);
-            xTime += xInc;
-
-            if (board.hasDiagonalWin((byte) (board.getSideToMove() == 1 ? 2 : 1)) || board.hasRowColumnWin((byte) (board.getSideToMove() == 1 ? 2 : 1))) {
-                wdl[2] += 1;
-                break;
-            }
-
-            if (board.isFull()) {
-                wdl[1] += 1;
-                break;
-            }
-
-            secondEngine.sendCommand("position " + board.getBoardNotation());
-            secondEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
-            makeMove(board, secondEngine);
-            oTime -= (int) (System.currentTimeMillis() - startTime);
-            oTime += oInc;
-
-            if (board.hasDiagonalWin((byte) (board.getSideToMove() == 1 ? 2 : 1)) || board.hasRowColumnWin((byte) (board.getSideToMove() == 1 ? 2 : 1))) {
-                wdl[0] += 1;
-                break;
-            }
-
-            if (board.isFull()) {
-                wdl[1] += 1;
-                break;
-            }
-        }
-
-        // Reset everything
-        board.setBoardNotation(boardNotation);
-
-        startTime = System.currentTimeMillis();
-
-        while (!board.isGameOver()) {
-            secondEngine.sendCommand("position " + board.getBoardNotation());
-            secondEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
-            makeMove(board, secondEngine);
-            xTime -= (int) (System.currentTimeMillis() - startTime);
-            xTime += xInc;
-
-            if (board.hasDiagonalWin((byte) (board.getSideToMove() == 1 ? 2 : 1)) || board.hasRowColumnWin((byte) (board.getSideToMove() == 1 ? 2 : 1))) {
-                wdl[0] += 1;
-                break;
-            }
-
-            if (board.isFull()) {
-                wdl[1] += 1;
-                break;
-            }
-
-            firstEngine.sendCommand("position " + board.getBoardNotation());
-            firstEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
-            makeMove(board, firstEngine);
-            oTime -= (int) (System.currentTimeMillis() - startTime);
-            oTime += oInc;
-
-            if (board.hasDiagonalWin((byte) (board.getSideToMove() == 1 ? 2 : 1)) || board.hasRowColumnWin((byte) (board.getSideToMove() == 1 ? 2 : 1))) {
-                wdl[2] += 1;
-                break;
-            }
-
-            if (board.isFull()) {
-                wdl[1] += 1;
-                break;
-            }
-        }
-
-        return wdl;
+        System.out.println("LLR        : " + llrColor + currentLLR + "\u001B[0m");
+        System.out.println("ELO        : " + elo.getElo(wins, losses, draws));
+        System.out.println("Games      : " + Arrays.toString(GameManager.games));
+        System.out.println("Progress   : " + getProgressBar(currentLLR));
     }
 
-    private void makeMove(Board board, Engine engine) {
-        ArrayList<String> output = engine.getOutput("bestmove");
-        String bestMoveLine = output.getLast();
-        String[] numbers = bestMoveLine.substring(bestMoveLine.indexOf("[") + 1, bestMoveLine.indexOf("]")).split(", ");
-        board.makeMove(Integer.parseInt(numbers[0]), Integer.parseInt(numbers[1]));
+    private String getProgressBar(double value) {
+        int totalBars = 50;
+
+        // Color the progress bar based on the value
+        String progressBarColor = value >= 0 ? "\u001B[32m" : "\u001B[31m";
+        String resetColor = "\u001B[0m";
+
+        short progressAmount = (short) ((value * 100) / 6);
+
+        if (progressAmount < 0) {
+            progressAmount = (short) -progressAmount;
+        }
+
+        if (progressAmount == 0) {
+            return progressBarColor + "[                                                  ]" + resetColor;
+        }
+
+        short filled = 0;
+
+        StringBuilder progressBar = new StringBuilder("[");
+        for (int i = 0; i < totalBars; i++) {
+            if (filled <= progressAmount) {
+                progressBar.append('█');
+                filled++;
+            } else {
+                progressBar.append(" ");
+            }
+        }
+        progressBar.append("]");
+
+        return progressBarColor + progressBar + resetColor;
     }
 
-    private final static class Engine {
+    static class GamePlayer {
+        private final Engine firstEngine;
+        private final Engine secondEngine;
+
+        public GamePlayer(Engine firstEngine, Engine secondEngine) {
+            this.firstEngine = firstEngine;
+            this.secondEngine = secondEngine;
+        }
+
+        private void playGame() {
+            int[] wdl = new int[3];
+            Board board = new Board(10, 5);
+
+            boolean isValidBoard = false;
+            String boardNotation = "";
+
+            while (!isValidBoard) {
+                board.reset();
+                for (int i = 0; i < 4; i++) {
+                    int[][] legalMoves = board.generateLegalMoves();
+                    board.makeMove(legalMoves[random.nextInt(legalMoves.length)]);
+                }
+
+                if (!board.isGameOver()) {
+                    isValidBoard = true;
+                    boardNotation = board.getBoardNotation();
+                }
+            }
+
+            int xTime = 8000;
+            int oTime = 8000;
+            int xInc = 8;
+            int oInc = 8;
+
+            System.currentTimeMillis();
+            long startTime;
+
+            while (!board.isGameOver()) {
+                firstEngine.sendCommand("position " + board.getBoardNotation());
+                firstEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
+                startTime = System.currentTimeMillis();
+                makeMove(board, firstEngine);
+                xTime -= (int) (System.currentTimeMillis() - startTime);
+                xTime += xInc;
+
+                if (board.hasWin(1)) {
+                    wdl[2] += 1;
+                    break;
+                }
+
+                if (board.isFull()) {
+                    wdl[1] += 1;
+                    break;
+                }
+
+                secondEngine.sendCommand("position " + board.getBoardNotation());
+                secondEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
+                startTime = System.currentTimeMillis();
+                makeMove(board, secondEngine);
+                oTime -= (int) (System.currentTimeMillis() - startTime);
+                oTime += oInc;
+
+                if (board.hasWin(2)) {
+                    wdl[0] += 1;
+                    break;
+                }
+
+                if (board.isFull()) {
+                    wdl[1] += 1;
+                    break;
+                }
+            }
+
+            // Reset everything
+            board.setBoardNotation(boardNotation);
+            xTime = 8000;
+            oTime = 8000;
+
+            while (!board.isGameOver()) {
+                secondEngine.sendCommand("position " + board.getBoardNotation());
+                secondEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
+                startTime = System.currentTimeMillis();
+                makeMove(board, secondEngine);
+                xTime -= (int) (System.currentTimeMillis() - startTime);
+                xTime += xInc;
+
+                if (board.hasWin(1)) {
+                    wdl[0] += 1;
+                    break;
+                }
+
+                if (board.isFull()) {
+                    wdl[1] += 1;
+                    break;
+                }
+
+                firstEngine.sendCommand("position " + board.getBoardNotation());
+                firstEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
+                startTime = System.currentTimeMillis();
+                makeMove(board, firstEngine);
+                oTime -= (int) (System.currentTimeMillis() - startTime);
+                oTime += oInc;
+
+                if (board.hasWin(2)) {
+                    wdl[2] += 1;
+                    break;
+                }
+
+                if (board.isFull()) {
+                    wdl[1] += 1;
+                    break;
+                }
+            }
+
+            updateScore(wdl);
+
+            // We need to close the engine processes or else we run out of memory
+            firstEngine.close();
+            secondEngine.close();
+        }
+
+        private void makeMove(Board board, Engine engine) {
+            ArrayList<String> output = engine.getOutput("bestmove");
+            String bestMoveLine;
+            try {
+                bestMoveLine = output.getLast();
+            } catch (NoSuchElementException e) {
+                throw new RuntimeException("No element was found, probably one of the engines isn't opened properly!", e);
+            }
+            String[] numbers = bestMoveLine.substring(bestMoveLine.indexOf("[") + 1, bestMoveLine.indexOf("]")).split(", ");
+            board.makeMove(Integer.parseInt(numbers[0]), Integer.parseInt(numbers[1]));
+        }
+    }
+
+    static synchronized void updateScore(int[] wdl) {
+        games[0] += wdl[0];
+        games[1] += wdl[1];
+        games[2] += wdl[2];
+    }
+
+
+    final static class Engine {
         private Process process;
         private BufferedWriter commandWriter;
         private BufferedReader outputReader;
+        private BufferedReader errorReader;
 
         /**
          * Opens a JAR file in a new process.
@@ -223,6 +285,19 @@ public class GameManager {
 
             commandWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
             outputReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+
+            // Start a thread to read and print the error stream
+            new Thread(() -> {
+                String line;
+                try {
+                    while ((line = errorReader.readLine()) != null) {
+                        System.err.println(line);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }).start();
         }
 
         /**
@@ -246,7 +321,7 @@ public class GameManager {
         }
 
         /**
-         * Reads the output from the running process.s
+         * Reads the output from the running process.
          *
          * @return A list of output lines from the process.
          */
@@ -259,7 +334,10 @@ public class GameManager {
             String line;
             while (true) {
                 try {
-                    if ((line = outputReader.readLine()) == null) break;
+                    line = outputReader.readLine();
+                    if (line == null) {
+                        break;
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -268,6 +346,7 @@ public class GameManager {
                     break;
                 }
             }
+
             return outputLines;
         }
 
@@ -282,13 +361,13 @@ public class GameManager {
                 try {
                     commandWriter.close();
                     outputReader.close();
+                    errorReader.close();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }
         }
     }
-
     private final static class LLR {
 
         // Important: This is heavily inspired by fastchess

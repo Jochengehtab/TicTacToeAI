@@ -29,6 +29,9 @@ public class Search {
     private int[] bestMove = new int[2];
     private boolean isNormalSearch = true, shouldStop = false;
     private long startTime, thinkTime;
+    short[][] reductions = new short[257][218];
+
+
 
     public int negamax(Board board, int depth, int ply, int alpha, int beta) {
 
@@ -51,45 +54,15 @@ public class Search {
             //return qs(board, alpha, beta, ply);
         }
 
-        /*
-        int key = board.getKey();
-
-        TranspositionTable.Entry entry = transpositionTable.probe(key);
-        int hashedScore = 0;
-        byte hashedType = 0;
-        int hashedDepth = 0;
-        int[] hashedMove = new int[0];
-        int staticEval = -200000;
-        if (entry != null) {
-            if (entry.key() == key) {
-                hashedScore = transpositionTable.scoreFromTT(entry.score(), ply);
-                hashedType = entry.type();
-                hashedDepth = entry.depth();
-                staticEval = entry.staticEval();
-                hashedMove = entry.move();
-            }
-
-            //Check if we can return a stored score
-            if (hashedDepth >= depth && ply > 0 && key == entry.key())
-            {
-                if ((hashedType == TranspositionTable.EXACT) ||
-                        (hashedType == TranspositionTable.UPPER_BOUND && hashedScore <= alpha) ||
-                        (hashedType == TranspositionTable.LOWER_BOUND && hashedScore >= beta))
-                {
-                    return hashedScore;
-                }
-            }
-        }
-
-        if (staticEval == -200000) {
-            staticEval = evaluate(board, ply);
-        }
-
-         */
-
         int staticEval = evaluate.evaluate(board, ply);
 
         boolean pvNode = beta > alpha + 1;
+
+        /*
+        LLR        : 2.98
+        ELO        : 95.7 +- 21.85
+        Games      : [153, 203, 340]
+         */
 
         //Reverse futility pruning
         if (depth <= 4 && staticEval - 72 * depth >= beta) {
@@ -98,10 +71,12 @@ public class Search {
 
         int bestScore = -30000;
         int[][] legalMoves = board.generateLegalMoves();
-        int[] scores = moveOrder.scoreMoves(legalMoves, stack[ply].killer/*, hashedMove*/);
+        int[] scores = moveOrder.scoreMoves(legalMoves, stack[ply].killer);
         int[] bestMovePVS = new int[0];
 
         byte type = TranspositionTable.LOWER_BOUND;
+
+        int moveCounter = 0;
 
         for (int i = 0; i < legalMoves.length; i++) {
 
@@ -109,12 +84,22 @@ public class Search {
 
             board.makeMove(move);
 
+            moveCounter++;
+
             int score;
             if (i == 0) {
                 score = -negamax(board, depth - 1, ply + 1, -beta, -alpha);
             } else {
-                score = -negamax(board, depth - 1, ply + 1, -alpha - 1, -alpha);
-                if (score > alpha && beta - alpha > 1) {
+                int lmr = 0;
+                if (depth > 2)
+                {
+                    lmr = reductions[depth][moveCounter];
+                    lmr -= pvNode ? 1 : 0;
+                    lmr = Math.clamp(lmr, 0, depth - 1);
+                }
+
+                score = -negamax(board, depth - lmr - 1, ply + 1, -alpha - 1, -alpha);
+                if (score > alpha && (score < beta || lmr > 0)) {
                     score = -negamax(board, depth - 1, ply + 1, -beta, -alpha);
                 }
             }
@@ -140,26 +125,6 @@ public class Search {
             }
         }
 
-        /*
-        byte finalType;
-
-        //Calculate the node type
-        if (bestScore >= beta) {
-            finalType = TranspositionTable.LOWER_BOUND;
-        }
-        else if (pvNode && (type == TranspositionTable.EXACT)) {
-            finalType = TranspositionTable.EXACT;
-        }
-        else {
-            finalType = TranspositionTable.UPPER_BOUND;
-        }
-
-
-        transpositionTable.write(board.getKey(), finalType, staticEval, transpositionTable.scoreToTT(bestScore, ply),
-        bestMovePVS, depth);
-
-
-         */
         return bestScore;
     }
 
@@ -281,6 +246,19 @@ public class Search {
         isNormalSearch = true;
         shouldStop = false;
         return tempBestMove;
+    }
+
+    public void initLMR()
+    {
+        double lmrBaseFinal = 78 / 100.0;
+        double lmrDivisorFinal = 240 / 100.0;
+        for (int depth = 0; depth < 257; depth++)
+        {
+            for (int move = 0; move < 218; move++)
+            {
+                reductions[depth][move] = (short) Math.clamp(lmrBaseFinal + Math.log(depth) * Math.log(move) / lmrDivisorFinal, -32678.0, 32678.0);
+            }
+        }
     }
 
     public int[] getBestMove(Board board, int depth) {

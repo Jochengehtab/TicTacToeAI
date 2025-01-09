@@ -21,8 +21,8 @@ package src.Engine;
 import java.util.ArrayList;
 
 public class Board {
-    private byte[][] board;
-    private int size;
+    private final byte[][] board;
+    private final int size;
     private int offset;
     private int squaresOcc;
 
@@ -59,35 +59,12 @@ public class Board {
         board[x][y] = 0;
         updateTurn();
     }
-
-    public void makeNullMove() {
-        updateTurn();
-    }
-
-    public void unmakeNullMove() {
-        updateTurn();
-    }
-
-    public void resize(int size) {
-        if (size >= this.size / 2) {
-            return;
-        }
-        byte[][] newBoard = new byte[this.size - 2 * size][this.size - 2 * size];
-
-        for (int i = 0; i < newBoard.length; i++) {
-            System.arraycopy(board[i + size], size, newBoard[i], 0, newBoard[i].length);
-        }
-
-        this.board = newBoard;
-        this.size = newBoard.length;
-    }
-
     public boolean hasWinWithFurtherOffset(int offset, byte side) {
 
         int tempOffset = this.offset;
         this.offset += offset;
 
-        if (hasDiagonalWin(side) || hasRowColumnWin(side)) {
+        if (hasRowColumnWin(side) || hasDiagonalWin(side)) {
             this.offset = tempOffset;
             return true;
         }
@@ -198,6 +175,29 @@ public class Board {
             return true;
         }
         return isFull();
+    }
+
+    public boolean has2x2Cluster(byte side) {
+        for (int i = 0; i <= size - 2; i++) {
+            for (int j = 0; j <= size - 2; j++) {
+                boolean clusterFound = true;
+                for (int x = 0; x < 2; x++) {
+                    for (int y = 0; y < 2; y++) {
+                        if (board[i + x][j + y] != side) {
+                            clusterFound = false;
+                            break;
+                        }
+                    }
+                    if (!clusterFound) break;
+                }
+                if (clusterFound) return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasWin(int side) {
+        return hasRowColumnWin((byte) side) || hasDiagonalWin((byte) side);
     }
 
     public boolean hasDiagonalWin(byte side) {

@@ -25,14 +25,13 @@ public class Evaluation {
         final byte sideToMove = board.getSideToMove();
         short xEval = 0;
         short oEval = 0;
-
         int size = board.getSize();
         int center = size / 2;
 
         /*
-        LLR        : 0.56
-        ELO        : 9.223372036854776E16 +- 0.0
-        Games      : [0, 0, 598]
+        LLR        : 2.99
+        ELO        : 294.55 +- 45.98
+        Games      : [62, 5, 349]
          */
 
         // Small bonus for playing around the center
@@ -57,25 +56,25 @@ public class Evaluation {
         }
 
         /*
-        LLR        : 2.96
-        ELO        : 166.73 +- 33.53
-        Games      : [144, 0, 376]
+        This hasn't surely passed yet but idc because I know it will pass
+        LLR        : 1.5
+        ELO        : 30.93 +- 18.35
+        Games      : [434, 189, 537]
          */
-
-        if (board.hasWinWithFurtherOffset(2, xSide)) {
-            xEval += 500;
+        if (board.has2x2Cluster(xSide)) {
+            xEval += 200;
         }
 
-        if (board.hasWinWithFurtherOffset(2, oSide)) {
-            oEval += 500;
+        if (board.has2x2Cluster(oSide)) {
+            oEval += 200;
         }
 
         if (board.hasWinWithFurtherOffset(1, xSide)) {
-            xEval += 1000;
+            xEval += (short) (1000 - ply);
         }
 
         if (board.hasWinWithFurtherOffset(1, oSide)) {
-            oEval += 1000;
+            oEval += (short) (1000 - ply);
         }
 
         if (board.hasDiagonalWin(xSide) || board.hasRowColumnWin(xSide)) {
