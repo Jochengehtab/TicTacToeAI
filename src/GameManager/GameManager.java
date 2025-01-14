@@ -26,8 +26,8 @@ import java.util.*;
 public class GameManager {
 
     private static final Random random = new Random();
-    private final String FIRST_NAME = "C:\\Temp\\TicTacToeAI\\src\\GameManager\\dev.jar";
-    private final String SECOND_NAME = "C:\\Temp\\TicTacToeAI\\src\\GameManager\\base.jar";
+    private final String FIRST_NAME = "dev.jar";
+    private final String SECOND_NAME = "base.jar";
     private static final int[] games = new int[3];
     private static final int generateHalfMoves = 6;
 
@@ -49,18 +49,7 @@ public class GameManager {
         double currentLLR;
 
         do {
-            ArrayList<Thread> threads = new ArrayList<>();
-
-            for (int i = 0; i < 5; i++) {
-                Engine firstEngine = new Engine();
-                Engine secondEngine = new Engine();
-                firstEngine.openEngine(gameManager.FIRST_NAME);
-                secondEngine.openEngine(gameManager.SECOND_NAME);
-
-                Thread thread = new Thread(() -> new GamePlayer(firstEngine, secondEngine).playGame());
-                thread.start();
-                threads.add(thread);
-            }
+            ArrayList<Thread> threads = getThreads(gameManager);
 
             for (Thread thread : threads) {
                 try {
@@ -79,6 +68,22 @@ public class GameManager {
             gameManager.logStats(currentLLR, wins, losses, draws);
 
         } while (!(currentLLR >= 2.95) && !(currentLLR <= -2.95));
+    }
+
+    private static ArrayList<Thread> getThreads(GameManager gameManager) {
+        ArrayList<Thread> threads = new ArrayList<>();
+
+        for (int i = 0; i < 5; i++) {
+            Engine firstEngine = new Engine();
+            Engine secondEngine = new Engine();
+            firstEngine.openEngine(gameManager.FIRST_NAME);
+            secondEngine.openEngine(gameManager.SECOND_NAME);
+
+            Thread thread = new Thread(() -> new GamePlayer(firstEngine, secondEngine).playGame());
+            thread.start();
+            threads.add(thread);
+        }
+        return threads;
     }
 
     private void logStats(double currentLLR, int wins, int losses, int draws) {
