@@ -20,11 +20,21 @@ package src.Engine;
 
 public class Evaluation {
     public int evaluate(Board board, int ply) {
-        final byte xSide = 1;
-        final byte oSide = 2;
         final byte sideToMove = board.getSideToMove();
-        short xEval = 0;
-        short oEval = 0;
+
+        int xEval = getEvalForSide(board, (byte) 1, ply);
+        int oEval = getEvalForSide(board, (byte) 2, ply);
+
+        int diff = xEval - oEval;
+        int perspective = sideToMove == 2 ? -1 : 1;
+
+        return perspective * diff;
+    }
+
+    private int getEvalForSide(Board board, byte side, int ply) {
+        int eval = 0;
+
+        // Stuff for the distance calculation
         int size = board.getSize();
         int center = size / 2;
 
@@ -37,8 +47,10 @@ public class Evaluation {
         // Small bonus for playing around the center
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                byte piece = board.get(i, j);
-                if (piece == 0) {
+                byte square = board.get(i, j);
+
+                // If the square is empty, we continue with the loop
+                if (square == 0) {
                     continue;
                 }
 
@@ -47,45 +59,15 @@ public class Evaluation {
                 // 10 is the maximum bonus
                 int centralBonus = Math.max(0, 10 - distanceToCenter);
 
-                if (piece == xSide) {
-                    xEval += (short) centralBonus;
-                } else if (piece == oSide) {
-                    oEval += (short) centralBonus;
+                if (square == side) {
+                    eval += centralBonus;
                 }
             }
         }
 
-        /*
-        This hasn't surely passed yet but idc because I know it will pass
-        LLR        : 1.5
-        ELO        : 30.93 +- 18.35
-        Games      : [434, 189, 537]
-         */
-        if (board.has2x2Cluster(xSide)) {
-            xEval += 200;
+        if (board.hasWinWithFurtherOffset(1, side)) {
+            eval += (short) (1000 - ply);
         }
-
-        if (board.has2x2Cluster(oSide)) {
-            oEval += 200;
-        }
-
-        if (board.hasWinWithFurtherOffset(1, xSide)) {
-            xEval += (short) (1000 - ply);
-        }
-
-        if (board.hasWinWithFurtherOffset(1, oSide)) {
-            oEval += (short) (1000 - ply);
-        }
-
-        if (board.hasDiagonalWin(xSide) || board.hasRowColumnWin(xSide)) {
-            xEval = (short) (30000 - ply);
-        }
-
-        if (board.hasDiagonalWin(oSide) || board.hasRowColumnWin(oSide)) {
-            oEval = (short) (30000 - ply);
-        }
-
-        int diff = xEval - oEval;
-        return (sideToMove == 2 ? -diff : diff);
+        return eval;
     }
 }

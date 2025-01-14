@@ -29,6 +29,7 @@ public class GameManager {
     private final String FIRST_NAME = "C:\\Temp\\TicTacToeAI\\src\\GameManager\\dev.jar";
     private final String SECOND_NAME = "C:\\Temp\\TicTacToeAI\\src\\GameManager\\base.jar";
     private static final int[] games = new int[3];
+    private static final int generateHalfMoves = 6;
 
     public static void main(String[] args) {
         GameManager gameManager = new GameManager();
@@ -38,6 +39,11 @@ public class GameManager {
         //noinspection ConstantValue
         if (gameManager.FIRST_NAME.equals(gameManager.SECOND_NAME)) {
             System.err.println("The two engines are the same!");
+        }
+
+        //noinspection ConstantValue
+        if (generateHalfMoves % 2 != 0) {
+            System.err.println("When generating a random position, it is not X-Turn");
         }
 
         double currentLLR;
@@ -136,12 +142,12 @@ public class GameManager {
 
             while (!isValidBoard) {
                 board.reset();
-                for (int i = 0; i < 4; i++) {
+                for (int i = 0; i < generateHalfMoves; i++) {
                     int[][] legalMoves = board.generateLegalMoves();
                     board.makeMove(legalMoves[random.nextInt(legalMoves.length)]);
                 }
 
-                if (!board.isGameOver()) {
+                if (!board.isGameOver() && !board.hasWinWithFurtherOffset(1, (byte) 1) && !board.hasWinWithFurtherOffset(2, (byte) 1)) {
                     isValidBoard = true;
                     boardNotation = board.getBoardNotation();
                 }
