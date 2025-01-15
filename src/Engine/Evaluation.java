@@ -66,7 +66,7 @@ public class Evaluation {
         }
 
         if (board.hasWinWithFurtherOffset(1, side)) {
-            eval += (short) (1000 - ply);
+            eval += 1000 - ply;
         }
         return eval;
     }

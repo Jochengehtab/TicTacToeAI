@@ -18,21 +18,20 @@
 
 package src.Engine;
 
-import java.util.ArrayList;
-
 public class Board {
     private final byte[][] board;
     private final int size;
-    private int offset;
-    private int squaresOcc;
-
+    public int offset;
+    private int winningSize;
+    private int freeSquares;
     private byte sideToMove = 1;
 
     public Board(int size, int offset) {
         board = new byte[size][size];
         this.size = size;
         this.offset = offset;
-        this.squaresOcc = 0;
+        this.winningSize = size - offset;
+        this.freeSquares = size * size;
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 board[i][j] = 0;
@@ -43,59 +42,43 @@ public class Board {
     public void makeMove(int[] move) {
         board[move[0]][move[1]] = this.sideToMove;
         updateTurn();
+        this.freeSquares--;
     }
 
     public void makeMove(int x, int y) {
         board[x][y] = this.sideToMove;
         updateTurn();
+        this.freeSquares--;
     }
 
     public void unmakeMove(int[] move) {
         board[move[0]][move[1]] = 0;
         updateTurn();
+        this.freeSquares++;
     }
 
+    @SuppressWarnings("unused")
     public void unmakeMove(int x, int y) {
         board[x][y] = 0;
         updateTurn();
+        this.freeSquares++;
     }
+
     public boolean hasWinWithFurtherOffset(int offset, byte side) {
 
         int tempOffset = this.offset;
         this.offset += offset;
+        this.winningSize = this.size - this.offset;
 
         if (hasRowColumnWin(side) || hasDiagonalWin(side)) {
             this.offset = tempOffset;
+            this.winningSize = this.size - this.offset;
             return true;
         }
 
         this.offset = tempOffset;
+        this.winningSize = this.size - this.offset;
         return false;
-    }
-
-    public int[][] generateNoiseMoves(byte sideToMove) {
-
-        ArrayList<int[]> legalMoveList = new ArrayList<>();
-
-        for (int i = 0; i < this.size; i++) {
-            for (int j = 0; j < this.size; j++) {
-                if (board[i][j] == 0) {
-                    makeMove(i, j);
-                    if (hasRowColumnWin(sideToMove)) {
-                        legalMoveList.add(new int[]{i, j});
-                    }
-                    unmakeMove(i, j);
-                }
-            }
-        }
-
-        // Convert the list to a two-dimensional Array
-        int[][] legalMoves = new int[legalMoveList.size()][2];
-        for (int k = 0; k < legalMoveList.size(); k++) {
-            legalMoves[k] = legalMoveList.get(k);
-        }
-
-        return legalMoves;
     }
 
     public int[][] generateLegalMoves() {
@@ -137,7 +120,7 @@ public class Board {
     }
 
     public void updateTurn() {
-        this.sideToMove = (byte) (this.sideToMove == 1 ? 2 : 1);
+        this.sideToMove = (byte) (this.sideToMove ^ 3);
     }
 
     public boolean hasRowColumnWin(byte side) {
@@ -158,7 +141,7 @@ public class Board {
                     isPlacedColumn = 0;
                 }
 
-                if (isPlacedRow == this.size - this.offset || isPlacedColumn == this.size - this.offset) {
+                if (isPlacedRow == this.winningSize || isPlacedColumn == this.winningSize) {
                     return true;
                 }
             }
@@ -175,25 +158,6 @@ public class Board {
             return true;
         }
         return isFull();
-    }
-
-    public boolean has2x2Cluster(byte side) {
-        for (int i = 0; i <= size - 2; i++) {
-            for (int j = 0; j <= size - 2; j++) {
-                boolean clusterFound = true;
-                for (int x = 0; x < 2; x++) {
-                    for (int y = 0; y < 2; y++) {
-                        if (board[i + x][j + y] != side) {
-                            clusterFound = false;
-                            break;
-                        }
-                    }
-                    if (!clusterFound) break;
-                }
-                if (clusterFound) return true;
-            }
-        }
-        return false;
     }
 
     public boolean hasWin(int side) {
@@ -213,7 +177,7 @@ public class Board {
                     tempCount = 0;
                 }
 
-                if (tempCount == this.size - this.offset) {
+                if (tempCount == this.winningSize) {
                     return true;
                 }
 
@@ -223,7 +187,7 @@ public class Board {
                     tempCount2 = 0;
                 }
 
-                if (tempCount2 == this.size - this.offset) {
+                if (tempCount2 == this.winningSize) {
                     return true;
                 }
             }
@@ -235,7 +199,7 @@ public class Board {
                     tempCount3 = 0;
                 }
 
-                if (tempCount3 == this.size - this.offset) {
+                if (tempCount3 == this.winningSize) {
                     return true;
                 }
             }
@@ -250,7 +214,7 @@ public class Board {
                     tempCount = 0;
                 }
 
-                if (tempCount == this.size - this.offset) {
+                if (tempCount == this.winningSize) {
                     return true;
                 }
             }
@@ -260,26 +224,15 @@ public class Board {
     }
 
     public boolean isFull() {
-        boolean isDraw = true;
-
-        for (int i = 0; i < this.size; i++) {
-            for (int j = 0; j < this.size; j++) {
-                if (board[i][j] == 0) {
-                    isDraw = false;
-                    break;
-                }
-            }
-        }
-
-        return isDraw;
+        return freeSquares == 0;
     }
 
     public int getKey() {
         int key = 0;
-        int prime = 31;
+
         for (byte[] bytes : board) {
             for (byte aByte : bytes) {
-                key = prime * key + aByte;
+                key = 31 * key + aByte;
             }
         }
         return key;
@@ -306,7 +259,7 @@ public class Board {
 
     public void setBoardNotation(String boardNotation) {
 
-        this.squaresOcc = 0;
+        this.freeSquares = this.size * this.size;
 
         // Determine the side to move
         if (boardNotation.charAt(boardNotation.length() - 1) == 'x') {
@@ -327,11 +280,11 @@ public class Board {
                         break;
                     case '1':
                         board[i][j] = 1;
-                        this.squaresOcc++;
+                        this.freeSquares--;
                         break;
                     case '2':
                         board[i][j] = 2;
-                        this.squaresOcc++;
+                        this.freeSquares--;
                         break;
                 }
                 inputIndex++;
@@ -374,9 +327,5 @@ public class Board {
 
     public byte get(int i, int j) {
         return board[i][j];
-    }
-
-    public int getSquaresOcc() {
-        return squaresOcc;
     }
 }

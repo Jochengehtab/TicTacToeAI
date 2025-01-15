@@ -21,42 +21,29 @@ package src.Engine;
 import java.util.Arrays;
 
 public class MoveOrder {
-    public int[] scoreMoves(int[][] legalMoves, int[] killer/*, int[] hashedMove*/) {
+    public int[] scoreMoves(int[][] legalMoves, int[] killer, Board board) {
 
         int[] scores = new int[legalMoves.length];
 
         for (int i = 0; i < legalMoves.length; i++) {
-            /*
-            if (hashedMove != null) {
-                if (Arrays.equals(legalMoves[i], hashedMove)) {
-                    scores[i] = 50000000;
-                }
-            }
+            scores[i] = 0;
 
-             */
             if (Arrays.equals(legalMoves[i], killer)) {
                 scores[i] = 500000;
             } else {
-                scores[i] = 0;
+                int size = board.getSize();
+                int center = size / 2;
+
+                int distanceToCenter = Math.abs(legalMoves[i][0] - center) + Math.abs(legalMoves[i][1] - center);
+
+                // 10 is the maximum bonus
+                int centralBonus = Math.max(0, 10 - distanceToCenter);
+
+                scores[i] += centralBonus;
             }
         }
+
 
         return scores;
-    }
-
-    public int[] getSortedMove(int[][] legalMoves, int[] scores, int i) {
-        for (int j = i + 1; j < legalMoves.length; j++) {
-            if (scores[j] > scores[i]) {
-                int[] temp = legalMoves[j];
-                legalMoves[j] = legalMoves[i];
-                legalMoves[i] = temp;
-
-                int temp2 = scores[j];
-                scores[j] = scores[i];
-                scores[i] = temp2;
-            }
-        }
-
-        return legalMoves[i];
     }
 }

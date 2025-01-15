@@ -19,6 +19,8 @@
 
 package src.Engine;
 
+import java.util.Arrays;
+
 public class Search {
 
     private final Stack[] stack = new Stack[256];
@@ -28,6 +30,7 @@ public class Search {
     private int[] bestMove = new int[2];
     private boolean isNormalSearch = true, shouldStop = false;
     private long startTime, thinkTime;
+    private final short infinity = 30000;
 
     public int negamax(Board board, int depth, int ply, int alpha, int beta) {
 
@@ -51,12 +54,19 @@ public class Search {
         // We increase the node count
         nodes++;
 
+        // Check for a game over
+        if (board.hasWin(board.getSideToMove() ^ 3)) {
+            return -infinity + ply;
+        } else if (board.isFull()) {
+            return 0;
+        }
+
         // Either the depth is zero or the game is over (terminal node) we return a static evaluation of the position
         if (depth == 0 || board.isGameOver()) {
             return evaluate.evaluate(board, ply);
         }
 
-        // TODO evaluation is bugged with mate score fixing this will bring hundreds of elo
+        // Make a static evaluation of the position
         int staticEval = evaluate.evaluate(board, ply);
 
         boolean pvNode = beta > alpha + 1;
@@ -72,13 +82,29 @@ public class Search {
             return (staticEval + beta) / 2;
         }
 
-        int bestScore = -30000;
+        int bestScore = -infinity;
+
+        // Generate all legal moves of the position
         int[][] legalMoves = board.generateLegalMoves();
-        int[] scores = moveOrder.scoreMoves(legalMoves, stack[ply].killer);
+
+        // Assign a score to all the moves
+        int[] scores = moveOrder.scoreMoves(legalMoves, stack[ply].killer, board);
 
         for (int i = 0; i < legalMoves.length; i++) {
 
-            int[] move = moveOrder.getSortedMove(legalMoves, scores, i);
+            // Get a move based on the score of the move
+            for (int j = i + 1; j < legalMoves.length; j++) {
+                if (scores[j] > scores[i]) {
+                    int[] temp = legalMoves[j];
+                    legalMoves[j] = legalMoves[i];
+                    legalMoves[i] = temp;
+
+                    int temp2 = scores[j];
+                    scores[j] = scores[i];
+                    scores[i] = temp2;
+                }
+            }
+            int[] move = legalMoves[i];
 
             // We make our move
             board.makeMove(move);
@@ -138,8 +164,8 @@ public class Search {
 
     int aspiration(int depth, int score, Board board) {
         int delta = 27;
-        int alpha = Math.max(-30000, score - delta);
-        int beta = Math.min(30000, score + delta);
+        int alpha = Math.max(-infinity, score - delta);
+        int beta = Math.min(infinity, score + delta);
         double finalASPMultiplier = 121 / 100.0;
 
         while (true) {
@@ -150,10 +176,10 @@ public class Search {
             }
 
             if (score >= beta) {
-                beta = Math.min(beta + delta, 30000);
+                beta = Math.min(beta + delta, infinity);
             } else if (score <= alpha) {
                 beta = (alpha + beta) / 2;
-                alpha = Math.max(alpha - delta, -30000);
+                alpha = Math.max(alpha - delta, -infinity);
             } else {
                 break;
             }
@@ -169,7 +195,7 @@ public class Search {
         int[] tempBestMove = new int[2];
 
         if (thinkTime < 0) {
-            negamax(board, 1, 0, -30000, 30000);
+            negamax(board, 1, 0, -infinity, infinity);
             return this.bestMove;
         }
         this.thinkTime = thinkTime;
@@ -184,7 +210,7 @@ public class Search {
 
         for (int i = 1; i < 256; i++) {
             depth = i;
-            score = i >= 6 ? aspiration(i, previousScore, board) : negamax(board, i, 0, -30000, 30000);
+            score = i >= 6 ? aspiration(i, previousScore, board) : negamax(board, i, 0, -infinity, infinity);
             previousScore = score;
             if (shouldStop) {
                 break;
@@ -202,7 +228,7 @@ public class Search {
     public int[] getBestMove(Board board, int depth) {
         initStack();
         nodes = 0;
-        negamax(board, depth, 0, -30000, 30000);
+        negamax(board, depth, 0, -infinity, infinity);
         return bestMove;
     }
 
@@ -236,6 +262,10 @@ public class Search {
         getBestMove(board, benchDepth);
         nodeCount += this.nodes;
 
+        board.setBoardNotation("2111221221211211112212110122122222121122210112221112222111121222211212112212211211121112220221122211x");
+        getBestMove(board, benchDepth);
+        nodeCount += this.nodes;
+
         long elapsedTime = System.currentTimeMillis() - startTime;
         double elapsedTimeSeconds = elapsedTime / 1000.0;
         int NPS = (int) Math.round(nodeCount / elapsedTimeSeconds);
@@ -247,7 +277,7 @@ public class Search {
     }
 
     public void speedtest() {
-        int amount = 20;
+        int amount = 10;
         int nps = 0;
         for (int i = 0; i < amount; i++) {
             nps += bench();

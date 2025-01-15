@@ -29,6 +29,7 @@ public class UTI {
     private static final Board board = new Board(10, 5);
 
     public static void main(String[] args) {
+
         if (args.length != 0 && Objects.equals(args[0], "bench")) {
             search.bench();
             return;

@@ -26,8 +26,8 @@ import java.util.*;
 public class GameManager {
 
     private static final Random random = new Random();
-    private final String FIRST_NAME = "dev.jar";
-    private final String SECOND_NAME = "base.jar";
+    private final String FIRST_NAME = "C:\\GitHub\\TicTacToeAI\\src\\GameManager\\dev.jar";
+    private final String SECOND_NAME = "C:\\GitHub\\TicTacToeAI\\src\\GameManager\\base.jar";
     private static final int[] games = new int[3];
     private static final int generateHalfMoves = 6;
 
@@ -73,7 +73,7 @@ public class GameManager {
     private static ArrayList<Thread> getThreads(GameManager gameManager) {
         ArrayList<Thread> threads = new ArrayList<>();
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 10; i++) {
             Engine firstEngine = new Engine();
             Engine secondEngine = new Engine();
             firstEngine.openEngine(gameManager.FIRST_NAME);
