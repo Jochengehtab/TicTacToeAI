@@ -22,11 +22,11 @@ public class Evaluation {
     public int evaluate(Board board, int ply) {
         final byte sideToMove = board.getSideToMove();
 
-        int xEval = getEvalForSide(board, (byte) 1, ply);
-        int oEval = getEvalForSide(board, (byte) 2, ply);
+        int xEval = getEvalForSide(board, board.X_SIDE, ply);
+        int oEval = getEvalForSide(board, board.O_SIDE, ply);
 
         int diff = xEval - oEval;
-        int perspective = sideToMove == 2 ? -1 : 1;
+        int perspective = sideToMove == board.O_SIDE ? -1 : 1;
 
         return perspective * diff;
     }

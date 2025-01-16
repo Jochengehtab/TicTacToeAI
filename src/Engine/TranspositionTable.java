@@ -19,6 +19,8 @@
 
 package src.Engine;
 
+import java.util.Arrays;
+
 public class TranspositionTable {
     public static final byte LOWER_BOUND = 1;
     public static final byte UPPER_BOUND = 2;
@@ -49,14 +51,14 @@ public class TranspositionTable {
     }
 
     public int scoreToTT(int score, int ply) {
-        return score >= 11000 ? score + ply
-                : score <= -11000 ? score - ply
+        return score >= 30000 ? score + ply
+                : score <= -30000 ? score - ply
                 : score;
     }
 
     public int scoreFromTT(int score, int ply) {
-        return score >= 11000 ? score - ply
-                : score <= -11000 ? score + ply
+        return score >= 30000 ? score - ply
+                : score <= -30000 ? score + ply
                 : score;
     }
 

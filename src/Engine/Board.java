@@ -22,6 +22,9 @@ public class Board {
     private final byte[][] board;
     private final int size;
     public int offset;
+    public final byte NO_SIDE = 0;
+    public final byte X_SIDE = 1;
+    public final byte O_SIDE = 2;
     private int winningSize;
     private int freeSquares;
     private byte sideToMove = 1;
@@ -32,9 +35,10 @@ public class Board {
         this.offset = offset;
         this.winningSize = size - offset;
         this.freeSquares = size * size;
+
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                board[i][j] = 0;
+                board[i][j] = NO_SIDE;
             }
         }
     }
@@ -52,7 +56,7 @@ public class Board {
     }
 
     public void unmakeMove(int[] move) {
-        board[move[0]][move[1]] = 0;
+        board[move[0]][move[1]] = NO_SIDE;
         updateTurn();
         this.freeSquares++;
     }
@@ -86,7 +90,7 @@ public class Board {
         for (int i = 0; i < this.size; i++) {
             for (int j = 0; j < this.size; j++) {
                 byte token = board[i][j];
-                if (token == 0) {
+                if (token == NO_SIDE) {
                     arraySize++;
                 }
             }
@@ -98,7 +102,7 @@ public class Board {
         for (int i = 0; i < this.size; i++) {
             for (int j = 0; j < this.size; j++) {
                 byte token = board[i][j];
-                if (token == 0) {
+                if (token == NO_SIDE) {
                     legalMoves[counter][0] = i;
                     legalMoves[counter][1] = j;
                     counter++;
@@ -112,11 +116,11 @@ public class Board {
     public void reset() {
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
-                board[i][j] = 0;
+                board[i][j] = NO_SIDE;
             }
         }
 
-        this.sideToMove = 1;
+        this.sideToMove = X_SIDE;
     }
 
     public void updateTurn() {
@@ -151,17 +155,17 @@ public class Board {
 
 
     public boolean isGameOver() {
-        if (hasRowColumnWin((byte) 1) || hasDiagonalWin((byte) 1)) {
+        if (hasWin(X_SIDE)) {
             return true;
         }
-        if (hasRowColumnWin((byte) 2) || hasDiagonalWin((byte) 2)) {
+        if (hasWin(O_SIDE)) {
             return true;
         }
         return isFull();
     }
 
-    public boolean hasWin(int side) {
-        return hasRowColumnWin((byte) side) || hasDiagonalWin((byte) side);
+    public boolean hasWin(byte side) {
+        return hasRowColumnWin(side) || hasDiagonalWin(side);
     }
 
     public boolean hasDiagonalWin(byte side) {
@@ -263,9 +267,9 @@ public class Board {
 
         // Determine the side to move
         if (boardNotation.charAt(boardNotation.length() - 1) == 'x') {
-            this.sideToMove = 1;
+            this.sideToMove = X_SIDE;
         } else {
-            this.sideToMove = 2;
+            this.sideToMove = O_SIDE;
         }
 
         // Parse the board notation
@@ -276,14 +280,14 @@ public class Board {
                 char token = input[inputIndex];
                 switch (token) {
                     case '0':
-                        board[i][j] = 0;
+                        board[i][j] = NO_SIDE;
                         break;
                     case '1':
-                        board[i][j] = 1;
+                        board[i][j] = X_SIDE;
                         this.freeSquares--;
                         break;
                     case '2':
-                        board[i][j] = 2;
+                        board[i][j] = O_SIDE;
                         this.freeSquares--;
                         break;
                 }

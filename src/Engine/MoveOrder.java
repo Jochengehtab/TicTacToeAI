@@ -21,18 +21,27 @@ package src.Engine;
 import java.util.Arrays;
 
 public class MoveOrder {
-    public int[] scoreMoves(int[][] legalMoves, int[] killer, Board board) {
+    public int[] scoreMoves(int[][] legalMoves, int[] killer, int[] hashMove, Board board) {
 
         int[] scores = new int[legalMoves.length];
 
         for (int i = 0; i < legalMoves.length; i++) {
             scores[i] = 0;
 
+            /*
+            LLR        : 2.98
+            ELO        : 48.91 +- 16.21
+            Games      : [438, 311, 631]
+             */
+            if (Arrays.equals(legalMoves[i], hashMove) && hashMove != null) {
+                scores[i] = 10000000;
+                continue;
+            }
+
             if (Arrays.equals(legalMoves[i], killer)) {
-                scores[i] = 500000;
+                scores[i] += 500000;
             } else {
-                int size = board.getSize();
-                int center = size / 2;
+                int center = board.getSize() / 2;
 
                 int distanceToCenter = Math.abs(legalMoves[i][0] - center) + Math.abs(legalMoves[i][1] - center);
 
@@ -42,7 +51,6 @@ public class MoveOrder {
                 scores[i] += centralBonus;
             }
         }
-
 
         return scores;
     }
