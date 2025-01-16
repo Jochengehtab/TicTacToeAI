@@ -26,10 +26,11 @@ import java.util.*;
 public class GameManager {
 
     private static final Random random = new Random();
-    private final String FIRST_NAME = "C:\\GitHub\\TicTacToeAI\\src\\GameManager\\dev.jar";
-    private final String SECOND_NAME = "C:\\GitHub\\TicTacToeAI\\src\\GameManager\\base.jar";
+    private final String FIRST_NAME = "GameManager\\dev.jar";
+    private final String SECOND_NAME = "GameManager\\base.jar";
     private static final int[] games = new int[3];
     private static final int generateHalfMoves = 6;
+    private static final int AMOUNT_THREADS = 5;
 
     public static void main(String[] args) {
         GameManager gameManager = new GameManager();
@@ -47,9 +48,11 @@ public class GameManager {
         }
 
         double currentLLR;
+        int iteration = 0;
 
         do {
             ArrayList<Thread> threads = getThreads(gameManager);
+            iteration++;
 
             for (Thread thread : threads) {
                 try {
@@ -63,21 +66,24 @@ public class GameManager {
             int draws = games[1];
             int losses = games[0];
 
+            if ((wins + draws + losses) / iteration != AMOUNT_THREADS * 2) {
+                System.err.println("Expected " + AMOUNT_THREADS * 2 + " games, got " +
+                        (wins + draws + losses) / iteration + " games!");
+            }
+
             currentLLR = llr.getLLR(wins, draws, losses);
 
             gameManager.logStats(currentLLR, wins, losses, draws);
 
-        } while (!(currentLLR >= 2.95) && !(currentLLR <= -2.95));
+        } while (!(currentLLR > 2.95) && !(currentLLR <= -2.95));
     }
 
     private static ArrayList<Thread> getThreads(GameManager gameManager) {
         ArrayList<Thread> threads = new ArrayList<>();
 
-        for (int i = 0; i < 10; i++) {
-            Engine firstEngine = new Engine();
-            Engine secondEngine = new Engine();
-            firstEngine.openEngine(gameManager.FIRST_NAME);
-            secondEngine.openEngine(gameManager.SECOND_NAME);
+        for (int i = 0; i < AMOUNT_THREADS; i++) {
+            Engine firstEngine = new Engine(gameManager.FIRST_NAME, "dev");
+            Engine secondEngine = new Engine(gameManager.SECOND_NAME, "base");
 
             Thread thread = new Thread(() -> new GamePlayer(firstEngine, secondEngine).playGame());
             thread.start();
@@ -103,14 +109,15 @@ public class GameManager {
         String progressBarColor = value >= 0 ? "\u001B[32m" : "\u001B[31m";
         String resetColor = "\u001B[0m";
 
-        short progressAmount = (short) ((value * 100) / 6);
+        short progressAmount = (short) ((value * 100) / 5);
 
         if (progressAmount < 0) {
             progressAmount = (short) -progressAmount;
         }
 
         if (progressAmount == 0) {
-            return progressBarColor + "[                                                  ]" + resetColor;
+            // This also inserts 50 white spaces with the String.format();
+            return progressBarColor + "[" + String.format("%50s", " ") + "]" + resetColor;
         }
 
         short filled = 0;
@@ -152,7 +159,7 @@ public class GameManager {
                     board.makeMove(legalMoves[random.nextInt(legalMoves.length)]);
                 }
 
-                if (!board.isGameOver() && !board.hasWinWithFurtherOffset(1, (byte) 1) && !board.hasWinWithFurtherOffset(2, (byte) 1)) {
+                if (!board.isGameOver() && !board.hasWinWithFurtherOffset(1, board.X_SIDE) && !board.hasWinWithFurtherOffset(1, board.O_SIDE)) {
                     isValidBoard = true;
                     boardNotation = board.getBoardNotation();
                 }
@@ -174,7 +181,7 @@ public class GameManager {
                 xTime -= (int) (System.currentTimeMillis() - startTime);
                 xTime += xInc;
 
-                if (board.hasWin(1)) {
+                if (board.hasWin(board.X_SIDE)) {
                     wdl[2] += 1;
                     break;
                 }
@@ -191,7 +198,7 @@ public class GameManager {
                 oTime -= (int) (System.currentTimeMillis() - startTime);
                 oTime += oInc;
 
-                if (board.hasWin(2)) {
+                if (board.hasWin(board.O_SIDE)) {
                     wdl[0] += 1;
                     break;
                 }
@@ -215,7 +222,7 @@ public class GameManager {
                 xTime -= (int) (System.currentTimeMillis() - startTime);
                 xTime += xInc;
 
-                if (board.hasWin(1)) {
+                if (board.hasWin(board.X_SIDE)) {
                     wdl[0] += 1;
                     break;
                 }
@@ -232,7 +239,7 @@ public class GameManager {
                 oTime -= (int) (System.currentTimeMillis() - startTime);
                 oTime += oInc;
 
-                if (board.hasWin(2)) {
+                if (board.hasWin(board.O_SIDE)) {
                     wdl[2] += 1;
                     break;
                 }
@@ -256,10 +263,17 @@ public class GameManager {
             try {
                 bestMoveLine = output.getLast();
             } catch (NoSuchElementException e) {
-                throw new RuntimeException("No element was found, probably one of the engines isn't opened properly!", e);
+                throw new RuntimeException("No element was found, probably the engine " + engine.getName() + " isn't opened properly!", e);
             }
             String[] numbers = bestMoveLine.substring(bestMoveLine.indexOf("[") + 1, bestMoveLine.indexOf("]")).split(", ");
-            board.makeMove(Integer.parseInt(numbers[0]), Integer.parseInt(numbers[1]));
+            int x = Integer.parseInt(numbers[0]);
+            int y = Integer.parseInt(numbers[1]);
+
+            if (board.get(x, y) != 0) {
+                System.err.println("The engine: " + engine.getName() + " made an illegal move!");
+            }
+
+            board.makeMove(x, y);
         }
     }
 
@@ -271,20 +285,20 @@ public class GameManager {
 
 
     final static class Engine {
-        private Process process;
-        private BufferedWriter commandWriter;
-        private BufferedReader outputReader;
-        private BufferedReader errorReader;
+        private final Process process;
+        private final BufferedWriter commandWriter;
+        private final BufferedReader outputReader;
+        private final BufferedReader errorReader;
+        private final String name;
 
         /**
          * Opens a JAR file in a new process.
          *
          * @param jarFilePath Path to the JAR file to be executed.
          */
-        public void openEngine(String jarFilePath) {
-            if (process != null && process.isAlive()) {
-                throw new IllegalStateException("This process already exists.");
-            }
+        public Engine(String jarFilePath, String name) {
+
+            this.name = name;
 
             ProcessBuilder processBuilder = new ProcessBuilder("java", "-jar", jarFilePath);
 
@@ -377,6 +391,13 @@ public class GameManager {
                     throw new RuntimeException(e);
                 }
             }
+        }
+
+        /**
+         * Gets the name of the engine
+         */
+        public String getName() {
+            return this.name;
         }
     }
     private final static class LLR {
