@@ -19,21 +19,19 @@
 
 package src.Engine;
 
-import java.util.Arrays;
-
 public class Search {
 
     private final Stack[] stack = new Stack[256];
     private final Evaluation evaluate = new Evaluation();
     private final MoveOrder moveOrder = new MoveOrder();
     private final TranspositionTable transpositionTable = new TranspositionTable(16);
+    private final short infinity = 30000;
     private int nodes = 0;
     private int[] bestMove = new int[2];
     private boolean isNormalSearch = true, shouldStop = false;
     private long startTime, thinkTime;
-    private final short infinity = 30000;
 
-    public int negamax(Board board, int depth, int ply, int alpha, int beta) {
+    public int negamax(Board board, short depth, int ply, int alpha, int beta) {
 
         // If we are told to stop, we return beta to exit the loop as fast as possible
         if (shouldStop) {
@@ -82,6 +80,7 @@ public class Search {
         int[] hashedMove = null;
         int staticEval = -200000;
 
+        // Check if we actually got a transposition entry
         if (entry != null) {
             if (entry.key() == key) {
                 hashedScore = transpositionTable.scoreFromTT(entry.score(), ply);
@@ -92,22 +91,23 @@ public class Search {
             }
 
             //Check if we can return a stored score
-            if (!pvNode && hashedDepth >= depth && ply > 0 && key == entry.key())
-            {
+            if (!pvNode && hashedDepth >= depth && ply > 0 && key == entry.key()) {
                 if ((hashedType == TranspositionTable.EXACT) ||
                         (hashedType == TranspositionTable.UPPER_BOUND && hashedScore <= alpha) ||
-                        (hashedType == TranspositionTable.LOWER_BOUND && hashedScore >= beta))
-                {
+                        (hashedType == TranspositionTable.LOWER_BOUND && hashedScore >= beta)) {
                     return hashedScore;
                 }
             }
         }
 
-        // TODO
-        // Finish the test from checkpoint
-        // [413, 202, 495]
-        if (entry == null && depth >= 4 && pvNode)
-        {
+        /*
+        LLR        : 2.97
+        ELO        : 23.39 +- 11.11
+        Games      : [1154, 565, 1361]
+         */
+
+        // If we got not a transposition, we can expect that move order is worse so we search at a reduced depth
+        if (entry == null && depth >= 4 && pvNode) {
             depth -= 1;
         }
 
@@ -125,6 +125,23 @@ public class Search {
         if (depth <= 4 && staticEval - 72 * depth >= beta) {
             return (staticEval + beta) / 2;
         }
+/*
+
+        if (!pvNode)
+        {
+            if (depth >= 3 && staticEval >= beta)
+            {
+                board.makeNullMove();
+                int depthReduction = 3 + depth / 3;
+                int score = -negamax(board, depth - depthReduction, ply + 1, -beta, -alpha);
+                board.unmakeNullMove();
+                if (score >= beta)
+                {
+                    return score;
+                }
+            }
+        }
+ */
 
         int bestScore = -infinity;
 
@@ -161,16 +178,16 @@ public class Search {
             // We assume our first move in the movelist is the best move in the position
             // So we search this move with a full window (-beta, -alpha)
             if (i == 0) {
-                score = -negamax(board, depth - 1, ply + 1, -beta, -alpha);
+                score = -negamax(board, (short) (depth - 1), ply + 1, -beta, -alpha);
             } else {
                 // Since we think that we already searched our best move in the position, we search the other moves
                 // with a very small window (-alpha - 1, -alpha)
-                score = -negamax(board, depth - 1, ply + 1, -alpha - 1, -alpha);
+                score = -negamax(board, (short) (depth - 1), ply + 1, -alpha - 1, -alpha);
 
                 // If our search reruns a score, that was not our assumption i.e., our first move wasn't the best
                 // we need to do an expensive re-search with a full window (-beta, -alpha)
                 if (score > alpha && score < beta) {
-                    score = -negamax(board, depth - 1, ply + 1, -beta, -alpha);
+                    score = -negamax(board, (short) (depth - 1), ply + 1, -beta, -alpha);
                 }
             }
 
@@ -207,16 +224,14 @@ public class Search {
         //Calculate the node type
         if (bestScore >= beta) {
             finalType = TranspositionTable.LOWER_BOUND;
-        }
-        else if (pvNode && (type == TranspositionTable.EXACT)) {
+        } else if (pvNode && (type == TranspositionTable.EXACT)) {
             finalType = TranspositionTable.EXACT;
-        }
-        else {
+        } else {
             finalType = TranspositionTable.UPPER_BOUND;
         }
 
 
-        transpositionTable.write(board.getKey(), finalType, staticEval, transpositionTable.scoreToTT(bestScore, ply),
+        transpositionTable.write(board.getKey(), finalType, (short) staticEval, transpositionTable.scoreToTT(bestScore, ply),
                 bestMovePVS, depth);
 
         return bestScore;
@@ -228,7 +243,7 @@ public class Search {
     Games      : [1133, 146, 1351]
      */
 
-    int aspiration(int depth, int score, Board board) {
+    int aspiration(short depth, int score, Board board) {
         int delta = 27;
         int alpha = Math.max(-infinity, score - delta);
         int beta = Math.min(infinity, score + delta);
@@ -261,7 +276,7 @@ public class Search {
         int[] tempBestMove = new int[2];
 
         if (thinkTime < 0) {
-            negamax(board, 1, 0, -infinity, infinity);
+            negamax(board, (short) 1, 0, -infinity, infinity);
             return this.bestMove;
         }
         this.thinkTime = thinkTime;
@@ -274,7 +289,7 @@ public class Search {
 
         int previousScore = 0;
 
-        for (int i = 1; i < 256; i++) {
+        for (short i = 1; i < 256; i++) {
             depth = i;
             score = i >= 6 ? aspiration(i, previousScore, board) : negamax(board, i, 0, -infinity, infinity);
             previousScore = score;
@@ -284,7 +299,7 @@ public class Search {
             tempBestMove = this.bestMove;
         }
 
-        System.out.println("Score: " + score + " | Depth: " + depth);
+        System.out.println("Score: " + score + " | Depth: " + depth + " | Hashfull: " + transpositionTable.hashfull());
         isNormalSearch = true;
         shouldStop = false;
         return tempBestMove;
@@ -293,7 +308,7 @@ public class Search {
     public int[] getBestMove(Board board, int depth) {
         initStack();
         nodes = 0;
-        negamax(board, depth, 0, -infinity, infinity);
+        negamax(board, (short) depth, 0, -infinity, infinity);
         return bestMove;
     }
 

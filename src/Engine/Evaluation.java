@@ -50,7 +50,7 @@ public class Evaluation {
                 byte square = board.get(i, j);
 
                 // If the square is empty, we continue with the loop
-                if (square == 0) {
+                if (square == board.NO_SIDE) {
                     continue;
                 }
 
@@ -68,6 +68,7 @@ public class Evaluation {
         if (board.hasWinWithFurtherOffset(1, side)) {
             eval += 1000 - ply;
         }
+
         return eval;
     }
 }

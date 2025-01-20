@@ -43,29 +43,54 @@ public class Board {
         }
     }
 
+    /**
+     * Makes a move on the board
+     * @param move The move array
+     */
     public void makeMove(int[] move) {
         board[move[0]][move[1]] = this.sideToMove;
         updateTurn();
         this.freeSquares--;
     }
 
+    /**
+     * Makes a move on the board
+     * @param x The X-Axis
+     * @param y The Y-Axis
+     */
     public void makeMove(int x, int y) {
         board[x][y] = this.sideToMove;
         updateTurn();
         this.freeSquares--;
     }
 
+    public void makeNullMove() {
+        updateTurn();
+    }
+
+    /**
+     * Unmakes a move on the board
+     * @param move The move array
+     */
     public void unmakeMove(int[] move) {
         board[move[0]][move[1]] = NO_SIDE;
         updateTurn();
         this.freeSquares++;
     }
 
-    @SuppressWarnings("unused")
+    /**
+     * Unmakes a move on the board
+     * @param x The X-Axis
+     * @param y The Y-Axis
+     */
     public void unmakeMove(int x, int y) {
         board[x][y] = 0;
         updateTurn();
         this.freeSquares++;
+    }
+
+    public void unmakeNullMove() {
+        updateTurn();
     }
 
     public boolean hasWinWithFurtherOffset(int offset, byte side) {
@@ -86,17 +111,8 @@ public class Board {
     }
 
     public int[][] generateLegalMoves() {
-        int arraySize = 0;
-        for (int i = 0; i < this.size; i++) {
-            for (int j = 0; j < this.size; j++) {
-                byte token = board[i][j];
-                if (token == NO_SIDE) {
-                    arraySize++;
-                }
-            }
-        }
 
-        int[][] legalMoves = new int[arraySize][2];
+        int[][] legalMoves = new int[freeSquares][2];
 
         int counter = 0;
         for (int i = 0; i < this.size; i++) {
@@ -113,6 +129,9 @@ public class Board {
         return legalMoves;
     }
 
+    /**
+     * This resets the board
+     */
     public void reset() {
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -123,6 +142,9 @@ public class Board {
         this.sideToMove = X_SIDE;
     }
 
+    /**
+     * Updates the move with an XOR since it can only be 1 or 2
+     */
     public void updateTurn() {
         this.sideToMove = (byte) (this.sideToMove ^ 3);
     }
@@ -133,10 +155,28 @@ public class Board {
             int isPlacedRow = 0;
             int isPlacedColumn = 0;
             for (int j = 0; j < this.size; j++) {
+
+                if (board[i][j] != side) {
+                    isPlacedRow = 0;
+                    continue;
+                }
+
                 if (board[i][j] == side) {
                     isPlacedRow++;
                 } else {
                     isPlacedRow = 0;
+                }
+
+                if (isPlacedRow == this.winningSize) {
+                    return true;
+                }
+            }
+
+            for (int j = 0; j < this.size; j++) {
+
+                if (board[j][i] != side) {
+                    isPlacedColumn = 0;
+                    continue;
                 }
 
                 if (board[j][i] == side) {
@@ -145,7 +185,7 @@ public class Board {
                     isPlacedColumn = 0;
                 }
 
-                if (isPlacedRow == this.winningSize || isPlacedColumn == this.winningSize) {
+                if (isPlacedColumn == this.winningSize) {
                     return true;
                 }
             }
@@ -175,7 +215,9 @@ public class Board {
             int tempCount3 = 0;
 
             for (int i = 0; i < this.size - startRow; i++) {
-                if (board[startRow + i][i] == side) {
+
+                final int finalStartRow = startRow + i;
+                if (board[finalStartRow][i] == side) {
                     tempCount++;
                 } else {
                     tempCount = 0;
@@ -185,7 +227,7 @@ public class Board {
                     return true;
                 }
 
-                if (board[startRow + i][this.size - 1 - i] == side) {
+                if (board[finalStartRow][this.size - 1 - i] == side) {
                     tempCount2++;
                 } else {
                     tempCount2 = 0;
@@ -194,10 +236,8 @@ public class Board {
                 if (tempCount2 == this.winningSize) {
                     return true;
                 }
-            }
 
-            for (int i = 0; i < this.size - (startRow + 1); i++) {
-                if (board[i][startRow + i + 1] == side) {
+                if (board[i][finalStartRow] == side) {
                     tempCount3++;
                 } else {
                     tempCount3 = 0;
@@ -236,7 +276,7 @@ public class Board {
 
         for (byte[] bytes : board) {
             for (byte aByte : bytes) {
-                key = 31 * key + aByte;
+                key = 27644437 * key + aByte;
             }
         }
         return key;

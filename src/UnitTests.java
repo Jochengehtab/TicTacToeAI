@@ -139,7 +139,7 @@ public class UnitTests {
     @Test
     public void testTranspositionTable() {
         TranspositionTable transpositionTable = new TranspositionTable(8);
-        transpositionTable.write(200, (byte) 2, 9, 20000, new int[]{5, 5}, 9);
+        transpositionTable.write(200, (byte) 2, (short) 9, 20000, new int[]{5, 5}, (short) 9);
         TranspositionTable.Entry probed = transpositionTable.probe(200);
         Assertions.assertEquals(9, probed.staticEval());
         Assertions.assertEquals(20000, probed.score());

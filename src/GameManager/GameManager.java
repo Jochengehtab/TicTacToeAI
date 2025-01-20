@@ -26,9 +26,9 @@ import java.util.*;
 public class GameManager {
 
     private static final Random random = new Random();
-    private final String FIRST_NAME = "GameManager\\dev.jar";
-    private final String SECOND_NAME = "GameManager\\base.jar";
-    private static final int[] games = new int[3];
+    private final String DEV = "GameManager\\dev.jar";
+    private final String BASE = "GameManager\\base.jar";
+    private static final int[] games = new int[]{0, 0, 0};
     private static final int generateHalfMoves = 6;
     private static final int AMOUNT_THREADS = 5;
 
@@ -38,7 +38,7 @@ public class GameManager {
         LLR llr = new LLR();
 
         //noinspection ConstantValue
-        if (gameManager.FIRST_NAME.equals(gameManager.SECOND_NAME)) {
+        if (gameManager.DEV.equals(gameManager.BASE)) {
             System.err.println("The two engines are the same!");
         }
 
@@ -49,6 +49,10 @@ public class GameManager {
 
         double currentLLR;
         int iteration = 0;
+
+        if (games[0] != 0) {
+            iteration = (games[2] + games[1] + games[0]) / (AMOUNT_THREADS * 2);
+        }
 
         do {
             ArrayList<Thread> threads = getThreads(gameManager);
@@ -82,10 +86,10 @@ public class GameManager {
         ArrayList<Thread> threads = new ArrayList<>();
 
         for (int i = 0; i < AMOUNT_THREADS; i++) {
-            Engine firstEngine = new Engine(gameManager.FIRST_NAME, "dev");
-            Engine secondEngine = new Engine(gameManager.SECOND_NAME, "base");
+            Engine devEngine = new Engine(gameManager.DEV, "dev");
+            Engine baseEngine = new Engine(gameManager.BASE, "base");
 
-            Thread thread = new Thread(() -> new GamePlayer(firstEngine, secondEngine).playGame());
+            Thread thread = new Thread(() -> new GamePlayer(devEngine, baseEngine).playGame());
             thread.start();
             threads.add(thread);
         }
@@ -98,7 +102,8 @@ public class GameManager {
 
         System.out.println("LLR        : " + llrColor + currentLLR + "\u001B[0m");
         System.out.println("ELO        : " + elo.getElo(wins, losses, draws));
-        System.out.println("Games      : " + Arrays.toString(GameManager.games));
+        System.out.println("Games      : " + Arrays.toString(GameManager.games) +
+                " | Total: " + (wins + draws + losses));
         System.out.println("Progress   : " + getProgressBar(currentLLR));
     }
 
@@ -109,15 +114,15 @@ public class GameManager {
         String progressBarColor = value >= 0 ? "\u001B[32m" : "\u001B[31m";
         String resetColor = "\u001B[0m";
 
-        short progressAmount = (short) ((value * 100) / 5);
+        short progressAmount = (short) ((value * 100) / 5.9);
 
         if (progressAmount < 0) {
             progressAmount = (short) -progressAmount;
         }
 
         if (progressAmount == 0) {
-            // This also inserts 50 white spaces with the String.format();
-            return progressBarColor + "[" + String.format("%50s", " ") + "]" + resetColor;
+            // This also inserts n white spaces with the String.format();
+            return progressBarColor + "[" + String.format("%" + totalBars + "s", " ") + "]" + resetColor;
         }
 
         short filled = 0;
@@ -137,152 +142,224 @@ public class GameManager {
     }
 
     static class GamePlayer {
-        private final Engine firstEngine;
-        private final Engine secondEngine;
+        private final Engine devEngine;
+        private final Engine baseEngine;
+        private final Board board = new Board(10, 5);
 
-        public GamePlayer(Engine firstEngine, Engine secondEngine) {
-            this.firstEngine = firstEngine;
-            this.secondEngine = secondEngine;
+        /**
+         * Default constructor
+         * @param devEngine The dev {@link Engine}
+         * @param baseEngine The base {@link Engine}
+         */
+        public GamePlayer(Engine devEngine, Engine baseEngine) {
+            this.devEngine = devEngine;
+            this.baseEngine = baseEngine;
         }
 
+        /**
+         * Plays a game pair between the dev and base engine
+         */
         private void playGame() {
             int[] wdl = new int[3];
-            Board board = new Board(10, 5);
 
             boolean isValidBoard = false;
             String boardNotation = "";
 
+            // Generate a random starting position
             while (!isValidBoard) {
+                // Reset the board that in case we are in a second iteration or higher
                 board.reset();
+
+                // Make x (as defined above) random moves
                 for (int i = 0; i < generateHalfMoves; i++) {
+
+                    // Generate all legal moves
                     int[][] legalMoves = board.generateLegalMoves();
+
+                    // Make a random move on the board
                     board.makeMove(legalMoves[random.nextInt(legalMoves.length)]);
                 }
 
-                if (!board.isGameOver() && !board.hasWinWithFurtherOffset(1, board.X_SIDE) && !board.hasWinWithFurtherOffset(1, board.O_SIDE)) {
+                // Check for a noise position, either the game is over or we are near a game over
+                if (!board.isGameOver() &&
+                        !board.hasWinWithFurtherOffset(1, board.X_SIDE) &&
+                        !board.hasWinWithFurtherOffset(1, board.O_SIDE)) {
                     isValidBoard = true;
                     boardNotation = board.getBoardNotation();
                 }
             }
 
+            // Set up the time management stuff
             int xTime = 8000;
             int oTime = 8000;
             int xInc = 8;
             int oInc = 8;
-
-            System.currentTimeMillis();
             long startTime;
 
+            // Play the first game where the dev Engine starts first
             while (!board.isGameOver()) {
-                firstEngine.sendCommand("position " + board.getBoardNotation());
-                firstEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
+
+                // Get the best move from the dev Engine
+                devEngine.sendCommand("position " + board.getBoardNotation());
+                devEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
                 startTime = System.currentTimeMillis();
-                makeMove(board, firstEngine);
+
+                // We wait for the engine to respond
+                makeMove(devEngine);
+
+                // Update the time
                 xTime -= (int) (System.currentTimeMillis() - startTime);
                 xTime += xInc;
 
+                // X made a move so we check for an X win
                 if (board.hasWin(board.X_SIDE)) {
                     wdl[2] += 1;
                     break;
                 }
 
+                // Check for a draw
                 if (board.isFull()) {
                     wdl[1] += 1;
                     break;
                 }
 
-                secondEngine.sendCommand("position " + board.getBoardNotation());
-                secondEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
+                // Get the best move from the base Engine
+                baseEngine.sendCommand("position " + board.getBoardNotation());
+                baseEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
                 startTime = System.currentTimeMillis();
-                makeMove(board, secondEngine);
+
+                // We wait for the engine to respond
+                makeMove(baseEngine);
+
+                // Update the time
                 oTime -= (int) (System.currentTimeMillis() - startTime);
                 oTime += oInc;
 
+                // O made a move so we check for an O win
                 if (board.hasWin(board.O_SIDE)) {
                     wdl[0] += 1;
                     break;
                 }
 
+                // Check for a draw
                 if (board.isFull()) {
                     wdl[1] += 1;
                     break;
                 }
             }
 
-            // Reset everything
+            // Reset the board
             board.setBoardNotation(boardNotation);
+
+            // Reset the time for both sides
             xTime = 8000;
             oTime = 8000;
 
+            // Play the second game where the base Engine starts first
             while (!board.isGameOver()) {
-                secondEngine.sendCommand("position " + board.getBoardNotation());
-                secondEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
+
+                // Get the best move from the base Engine
+                baseEngine.sendCommand("position " + board.getBoardNotation());
+                baseEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
                 startTime = System.currentTimeMillis();
-                makeMove(board, secondEngine);
+
+                // We wait for the engine to respond
+                makeMove(baseEngine);
+
+                // Update the time
                 xTime -= (int) (System.currentTimeMillis() - startTime);
                 xTime += xInc;
 
+
+                // X made a move so we check for an X win
                 if (board.hasWin(board.X_SIDE)) {
                     wdl[0] += 1;
                     break;
                 }
 
+                // Check for a draw
                 if (board.isFull()) {
                     wdl[1] += 1;
                     break;
                 }
 
-                firstEngine.sendCommand("position " + board.getBoardNotation());
-                firstEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
+                // Get the best move from the dev Engine
+                devEngine.sendCommand("position " + board.getBoardNotation());
+                devEngine.sendCommand("go xTime " + xTime + " oTime " + oTime + " xInc " + xInc + " oInc " + oInc);
                 startTime = System.currentTimeMillis();
-                makeMove(board, firstEngine);
+
+                // We wait for the engine to respond
+                makeMove(devEngine);
+
+                // Update the time
                 oTime -= (int) (System.currentTimeMillis() - startTime);
                 oTime += oInc;
 
+                // O made a move so we check for an O win
                 if (board.hasWin(board.O_SIDE)) {
                     wdl[2] += 1;
                     break;
                 }
 
+                // Check for a draw
                 if (board.isFull()) {
                     wdl[1] += 1;
                     break;
                 }
             }
 
+            // Update the wdl
             updateScore(wdl);
 
             // We need to close the engine processes or else we run out of memory
-            firstEngine.close();
-            secondEngine.close();
+            devEngine.close();
+            baseEngine.close();
         }
 
-        private void makeMove(Board board, Engine engine) {
+        /**
+         * Waits for the engine output and makes the move on the board
+         * @param engine The engine which should make the move
+         */
+        private void makeMove(Engine engine) {
             ArrayList<String> output = engine.getOutput("bestmove");
+            //noinspection ExtractMethodRecommender
             String bestMoveLine;
+
             try {
+                // The best move is always in the last line
                 bestMoveLine = output.getLast();
             } catch (NoSuchElementException e) {
-                throw new RuntimeException("No element was found, probably the engine " + engine.getName() + " isn't opened properly!", e);
+                // It could be that we got no last element which indicates
+                // that the engine process was not open probable
+                throw new RuntimeException("No element was found, probably the engine '" + engine.getName() + "' isn't opened properly!", e);
             }
+
+            // Extract the two coordinates
             String[] numbers = bestMoveLine.substring(bestMoveLine.indexOf("[") + 1, bestMoveLine.indexOf("]")).split(", ");
+
+            // Parse the two coordinates
             int x = Integer.parseInt(numbers[0]);
             int y = Integer.parseInt(numbers[1]);
 
+            // Check if the engine made an illegal move
             if (board.get(x, y) != 0) {
                 System.err.println("The engine: " + engine.getName() + " made an illegal move!");
             }
 
+            // Make the move on the board
             board.makeMove(x, y);
         }
     }
 
-    static synchronized void updateScore(int[] wdl) {
+    /**
+     * Synchronized method that receives updated wdl from different threads
+     * @param wdl The wdl to add
+     */
+    private static synchronized void updateScore(int[] wdl) {
         games[0] += wdl[0];
         games[1] += wdl[1];
         games[2] += wdl[2];
     }
-
 
     final static class Engine {
         private final Process process;
@@ -291,17 +368,13 @@ public class GameManager {
         private final BufferedReader errorReader;
         private final String name;
 
-        /**
-         * Opens a JAR file in a new process.
-         *
-         * @param jarFilePath Path to the JAR file to be executed.
-         */
         public Engine(String jarFilePath, String name) {
 
             this.name = name;
 
             ProcessBuilder processBuilder = new ProcessBuilder("java", "-jar", jarFilePath);
 
+            // Spawn the new process
             try {
                 process = processBuilder.start();
             } catch (IOException e) {
@@ -324,6 +397,7 @@ public class GameManager {
                 }
             }).start();
         }
+
 
         /**
          * Sends a command to the running process.
