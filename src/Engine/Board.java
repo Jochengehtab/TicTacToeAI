@@ -159,14 +159,9 @@ public class Board {
                 if (board[i][j] != side) {
                     isPlacedRow = 0;
                     continue;
-                }
-
-                if (board[i][j] == side) {
-                    isPlacedRow++;
                 } else {
-                    isPlacedRow = 0;
+                    isPlacedRow++;
                 }
-
                 if (isPlacedRow == this.winningSize) {
                     return true;
                 }
@@ -177,12 +172,8 @@ public class Board {
                 if (board[j][i] != side) {
                     isPlacedColumn = 0;
                     continue;
-                }
-
-                if (board[j][i] == side) {
-                    isPlacedColumn++;
                 } else {
-                    isPlacedColumn = 0;
+                    isPlacedColumn++;
                 }
 
                 if (isPlacedColumn == this.winningSize) {
