@@ -30,6 +30,7 @@ public class UTI {
 
     public static void main(String[] args) {
 
+        search.initLMR(board);
         if (args.length != 0 && Objects.equals(args[0], "bench")) {
             search.bench();
             return;

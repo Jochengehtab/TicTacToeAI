@@ -21,23 +21,29 @@ package src.GameManager;
 import src.Engine.Board;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.NoSuchElementException;
+import java.util.Random;
 
 public class GameManager {
-
-    private static final Random random = new Random();
-    private final String DEV = "GameManager\\dev.jar";
-    private final String BASE = "GameManager\\base.jar";
-    private static final int[] games = new int[]{0, 0, 0};
+    // This has the following Layout
+    // Dev Engine Losses | Draws | Dev Engine Wins
+    private static final int[] games = new int[]{1423, 829, 1558};
     private static final int generateHalfMoves = 6;
-    private static final int AMOUNT_THREADS = 5;
+    private static final int AMOUNT_THREADS = 12;
+    private final Elo elo = new Elo();
+    private final String currentPath = System.getProperty("user.dir");
+    private final String DEV = (!currentPath.contains("GameManager") ?
+            currentPath + "\\src\\GameManager" : "") + "\\dev.jar";
+    private final String BASE = (!currentPath.contains("GameManager") ?
+            currentPath + "\\src\\GameManager" : "") + "\\base.jar";
 
     public static void main(String[] args) {
         GameManager gameManager = new GameManager();
 
         LLR llr = new LLR();
 
-        //noinspection ConstantValue
         if (gameManager.DEV.equals(gameManager.BASE)) {
             System.err.println("The two engines are the same!");
         }
@@ -50,14 +56,22 @@ public class GameManager {
         double currentLLR;
         int iteration = 0;
 
+        // Check if we start from a checkpoint
         if (games[0] != 0) {
+            // Calculate the iteration based on the number of games
             iteration = (games[2] + games[1] + games[0]) / (AMOUNT_THREADS * 2);
+            System.out.println("Resuming from checkpoint.");
         }
 
+        // Play games until our LLR exceeds one of the two bounds
         do {
+            // Generate a list of all Game Player threads
             ArrayList<Thread> threads = getThreads(gameManager);
+
+            // Increment the iteration
             iteration++;
 
+            // Loop over all the threads and wait for them to finish
             for (Thread thread : threads) {
                 try {
                     thread.join();
@@ -66,38 +80,74 @@ public class GameManager {
                 }
             }
 
+            // Get all the stats after all games have finished
             int wins = games[2];
             int draws = games[1];
             int losses = games[0];
+            int total = wins + draws + losses;
 
-            if ((wins + draws + losses) / iteration != AMOUNT_THREADS * 2) {
-                System.err.println("Expected " + AMOUNT_THREADS * 2 + " games, got " +
-                        (wins + draws + losses) / iteration + " games!");
+            // If we don't get the amount AMOUNT_THREADS * 2, something went wrong
+            if (total / iteration != AMOUNT_THREADS * 2) {
+                System.err.println("Expected " + AMOUNT_THREADS * 2 + " games, got " + total / iteration + " games!");
             }
 
+            // Calculate the new LLR based on the new stats
             currentLLR = llr.getLLR(wins, draws, losses);
 
+            // Log the current stats to the console
             gameManager.logStats(currentLLR, wins, losses, draws);
 
         } while (!(currentLLR > 2.95) && !(currentLLR <= -2.95));
     }
 
+    /**
+     * Create and starts all Threads for the {@link GamePlayer}
+     *
+     * @param gameManager An Instance of {@link GameManager}
+     * @return Returns a {@link ArrayList} of all the startet Threads
+     */
     private static ArrayList<Thread> getThreads(GameManager gameManager) {
         ArrayList<Thread> threads = new ArrayList<>();
 
+        // Create for every thread a Game Player Object
         for (int i = 0; i < AMOUNT_THREADS; i++) {
+
+            // Spawn the two engines
             Engine devEngine = new Engine(gameManager.DEV, "dev");
             Engine baseEngine = new Engine(gameManager.BASE, "base");
 
+            // Create the thread and start them
             Thread thread = new Thread(() -> new GamePlayer(devEngine, baseEngine).playGame());
             thread.start();
+
+            // Adds the thread to the list
             threads.add(thread);
         }
         return threads;
     }
 
+    /**
+     * Synchronized method that receives updated wdl from different threads
+     *
+     * @param wdl The wdl to add
+     */
+    private static synchronized void updateScore(int[] wdl) {
+        games[0] += wdl[0];
+        games[1] += wdl[1];
+        games[2] += wdl[2];
+    }
+
+    /**
+     * Logs the stats to the console prettily
+     *
+     * @param currentLLR The current LLR
+     * @param wins       The number of wins from the dev engine
+     * @param losses     The number of losses from the dev engine
+     * @param draws      The number of draws
+     */
     private void logStats(double currentLLR, int wins, int losses, int draws) {
-        Elo elo = new Elo();
+
+        // Determent the color based on the LLR
         String llrColor = currentLLR >= 0 ? "\u001B[32;1m" : "\u001B[31;1m";
 
         System.out.println("LLR        : " + llrColor + currentLLR + "\u001B[0m");
@@ -107,27 +157,39 @@ public class GameManager {
         System.out.println("Progress   : " + getProgressBar(currentLLR));
     }
 
-    private String getProgressBar(double value) {
-        int totalBars = 50;
+    /**
+     * Creates a progress bar
+     *
+     * @param llr The current LLR on which the progress bar is based on
+     * @return The final progress bar
+     */
+    private String getProgressBar(double llr) {
+        short totalBars = 50;
 
         // Color the progress bar based on the value
-        String progressBarColor = value >= 0 ? "\u001B[32m" : "\u001B[31m";
+        String progressBarColor = llr >= 0 ? "\u001B[32m" : "\u001B[31m";
         String resetColor = "\u001B[0m";
 
-        short progressAmount = (short) ((value * 100) / 5.9);
+        // Calculate how many bars should be filled
+        short progressAmount = (short) ((llr * 100) / 5.9);
 
+        // If the LLR is negative, the progressAmount is also negative,
+        // so we need to invert it
         if (progressAmount < 0) {
             progressAmount = (short) -progressAmount;
         }
 
+        // If we don't fill up any bars, we return an empty bar
         if (progressAmount == 0) {
-            // This also inserts n white spaces with the String.format();
+            // This inserts n white spaces with the String.format();
             return progressBarColor + "[" + String.format("%" + totalBars + "s", " ") + "]" + resetColor;
         }
 
         short filled = 0;
 
         StringBuilder progressBar = new StringBuilder("[");
+
+        // Fill up the progress bar
         for (int i = 0; i < totalBars; i++) {
             if (filled <= progressAmount) {
                 progressBar.append('█');
@@ -141,14 +203,16 @@ public class GameManager {
         return progressBarColor + progressBar + resetColor;
     }
 
-    static class GamePlayer {
+    private final static class GamePlayer {
         private final Engine devEngine;
         private final Engine baseEngine;
+        private final Random random = new Random();
         private final Board board = new Board(10, 5);
 
         /**
          * Default constructor
-         * @param devEngine The dev {@link Engine}
+         *
+         * @param devEngine  The dev {@link Engine}
          * @param baseEngine The base {@link Engine}
          */
         public GamePlayer(Engine devEngine, Engine baseEngine) {
@@ -318,6 +382,7 @@ public class GameManager {
 
         /**
          * Waits for the engine output and makes the move on the board
+         *
          * @param engine The engine which should make the move
          */
         private void makeMove(Engine engine) {
@@ -351,16 +416,6 @@ public class GameManager {
         }
     }
 
-    /**
-     * Synchronized method that receives updated wdl from different threads
-     * @param wdl The wdl to add
-     */
-    private static synchronized void updateScore(int[] wdl) {
-        games[0] += wdl[0];
-        games[1] += wdl[1];
-        games[2] += wdl[2];
-    }
-
     final static class Engine {
         private final Process process;
         private final BufferedWriter commandWriter;
@@ -368,6 +423,12 @@ public class GameManager {
         private final BufferedReader errorReader;
         private final String name;
 
+        /**
+         * Opens a Process with the corresponding engine
+         *
+         * @param jarFilePath The Path to the jar file
+         * @param name        The name of the engine
+         */
         public Engine(String jarFilePath, String name) {
 
             this.name = name;
@@ -381,6 +442,7 @@ public class GameManager {
                 throw new RuntimeException(e);
             }
 
+            // Open all the streams
             commandWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
             outputReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
@@ -406,10 +468,13 @@ public class GameManager {
          * @throws IllegalStateException If no process is running.
          */
         public void sendCommand(String command) {
+
+            // Check if the process is still running
             if (process == null || !process.isAlive()) {
                 throw new IllegalStateException("No process is running.");
             }
 
+            // Send the command to the console
             try {
                 commandWriter.write(command);
                 commandWriter.newLine();
@@ -474,6 +539,7 @@ public class GameManager {
             return this.name;
         }
     }
+
     private final static class LLR {
 
         // Important: This is heavily inspired by fastchess
