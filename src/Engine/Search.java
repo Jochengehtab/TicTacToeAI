@@ -19,13 +19,22 @@
 
 package src.Engine;
 
-public class Search {
+import java.util.Arrays;
+
+public class
+
+
+Search {
 
     private final Stack[] stack = new Stack[256];
     private final Evaluation evaluate = new Evaluation();
     private final MoveOrder moveOrder = new MoveOrder();
     private final TranspositionTable transpositionTable = new TranspositionTable(16);
     private final short infinity = 30000;
+    private final short MAX_PLY = 256;
+    //LMR
+    // Indexed by Depth | Move counter
+    short[][] reductions;
     private int nodes = 0;
     private int[] bestMove = new int[2];
     private boolean isNormalSearch = true, shouldStop = false;
@@ -73,15 +82,20 @@ public class Search {
         ELO        : 26.79 +- 11.77
         Games      : [878, 607, 1075]
          */
+
+        // Probe the transposition table
         TranspositionTable.Entry entry = transpositionTable.probe(key);
+
+        // Set up values that are potentially stored in the transposition table
         int hashedScore = 0;
         byte hashedType = 0;
         int hashedDepth = 0;
         int[] hashedMove = null;
-        int staticEval = -200000;
+        int staticEval = -50000;
 
         // Check if we actually got a transposition entry
         if (entry != null) {
+
             if (entry.key() == key) {
                 hashedScore = transpositionTable.scoreFromTT(entry.score(), ply);
                 hashedType = entry.type();
@@ -111,7 +125,8 @@ public class Search {
             depth -= 1;
         }
 
-        if (staticEval == -200000) {
+        // If no evaluation was found in the transposition table, we statically evaluate the position
+        if (staticEval == -50000) {
             staticEval = evaluate.evaluate(board, ply);
         }
 
@@ -121,27 +136,33 @@ public class Search {
         Games      : [153, 203, 340]
          */
 
-        //Reverse futility pruning
+        // Reverse futility pruning
+        // We basically return the static evaluation (with a beta tweak) when
+        // the static eval minus some margin, in our case staticEval - n * depth, is above beta
         if (depth <= 4 && staticEval - 72 * depth >= beta) {
             return (staticEval + beta) / 2;
         }
-/*
 
-        if (!pvNode)
-        {
-            if (depth >= 3 && staticEval >= beta)
-            {
-                board.makeNullMove();
-                int depthReduction = 3 + depth / 3;
-                int score = -negamax(board, depth - depthReduction, ply + 1, -beta, -alpha);
-                board.unmakeNullMove();
-                if (score >= beta)
-                {
-                    return score;
-                }
+        /*
+        LLR        : 2.97
+        ELO        : 12.43 +- 7.63
+        Games      : [2261, 1408, 2481] | Total: 6150 | Draw Percent: 22.89
+         */
+
+        // Null Move Pruning
+        // We pass a move to our opponent and search with a reduced depth
+        // If we got a beta cutoff
+        if (!pvNode && depth > 4 && staticEval >= beta) {
+            board.makeNullMove();
+            int reducedDepth = 3 + depth / 3;
+            int score = -negamax(board, (short) (depth - reducedDepth), ply + 1, -beta, -alpha);
+            board.unmakeNullMove();
+
+            // Check for a beta cutoff
+            if (score >= beta) {
+                return score;
             }
         }
- */
 
         int bestScore = -infinity;
 
@@ -153,25 +174,18 @@ public class Search {
 
         int[] bestMovePVS = null;
         short type = TranspositionTable.LOWER_BOUND;
+        int moveCounter = 0;
 
         for (int i = 0; i < legalMoves.length; i++) {
 
             // Get a move based on the score of the move
-            for (int j = i + 1; j < legalMoves.length; j++) {
-                if (scores[j] > scores[i]) {
-                    int[] temp = legalMoves[j];
-                    legalMoves[j] = legalMoves[i];
-                    legalMoves[i] = temp;
-
-                    int temp2 = scores[j];
-                    scores[j] = scores[i];
-                    scores[i] = temp2;
-                }
-            }
+            moveOrder.sort(i, legalMoves, scores);
             int[] move = legalMoves[i];
 
             // We make our move
             board.makeMove(move);
+
+            moveCounter++;
 
             int score;
             // PVS
@@ -180,13 +194,26 @@ public class Search {
             if (i == 0) {
                 score = -negamax(board, (short) (depth - 1), ply + 1, -beta, -alpha);
             } else {
+
+                // Late Move Reductions
+                // Moves that are ordered closer to the end typically are worse,
+                // So we search these types of moves with less depth
+                int lmr = 0;
+                if (depth > 2) {
+                    lmr = reductions[depth][moveCounter];
+
+                    // Reduce less if we are in a PvNode
+                    lmr -= pvNode ? 2 : 0;
+                    lmr = Math.clamp(lmr, 0, depth - 1);
+                }
+
                 // Since we think that we already searched our best move in the position, we search the other moves
                 // with a very small window (-alpha - 1, -alpha)
-                score = -negamax(board, (short) (depth - 1), ply + 1, -alpha - 1, -alpha);
+                score = -negamax(board, (short) (depth - lmr - 1), ply + 1, -alpha - 1, -alpha);
 
                 // If our search reruns a score, that was not our assumption i.e., our first move wasn't the best
                 // we need to do an expensive re-search with a full window (-beta, -alpha)
-                if (score > alpha && score < beta) {
+                if (score > alpha && (score < beta || lmr > 0)) {
                     score = -negamax(board, (short) (depth - 1), ply + 1, -beta, -alpha);
                 }
             }
@@ -233,6 +260,7 @@ public class Search {
 
         transpositionTable.write(board.getKey(), finalType, (short) staticEval, transpositionTable.scoreToTT(bestScore, ply),
                 bestMovePVS, depth);
+
 
         return bestScore;
     }
@@ -296,10 +324,11 @@ public class Search {
             if (shouldStop) {
                 break;
             }
+            System.out.println("info depth " + i + " score " + score + " pv " + Arrays.toString(this.bestMove));
             tempBestMove = this.bestMove;
         }
 
-        System.out.println("Score: " + score + " | Depth: " + depth + " | Hashfull: " + transpositionTable.hashfull());
+        System.out.println("info depth " + depth + " score " + score + " hashfull " + transpositionTable.hashfull() + " pv " + Arrays.toString(tempBestMove));
         isNormalSearch = true;
         shouldStop = false;
         return tempBestMove;
@@ -322,7 +351,7 @@ public class Search {
         initStack();
         startTime = System.currentTimeMillis();
         shouldStop = false;
-        short benchDepth = 6;
+        short benchDepth = 7;
 
         Board board = new Board(10, 5);
         int nodeCount = 0;
@@ -364,5 +393,16 @@ public class Search {
         }
         System.out.println("Average speed of " + amount + " Benchmarks is: " + Math.round((float) nps / amount) +
                 " NPS");
+    }
+
+    public void initLMR(Board board) {
+        this.reductions = new short[MAX_PLY][board.getSize() * board.getSize()];
+        double lmrBaseFinal = 45 / 100.0;
+        double lmrDivisorFinal = 200 / 100.0;
+        for (int depth = 0; depth < MAX_PLY; depth++) {
+            for (int moveCount = 0; moveCount < (board.getSize() * board.getSize()); moveCount++) {
+                reductions[depth][moveCount] = (short) Math.clamp(lmrBaseFinal + Math.log(depth) * Math.log(moveCount) / lmrDivisorFinal, -32678.0, 32678.0);
+            }
+        }
     }
 }

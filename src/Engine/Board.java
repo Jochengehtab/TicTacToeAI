@@ -149,6 +149,56 @@ public class Board {
         this.sideToMove = (byte) (this.sideToMove ^ 3);
     }
 
+    public boolean hasRowColGapWin(int gapSize, byte side) {
+        for (int i = 0; i < this.size; i++) {
+
+            int isPlacedRow = 0;
+            int isPlacedColumn = 0;
+            int gapCountRow = 0;
+            int gapCountColum = 0;
+            for (int j = 0; j < this.size; j++) {
+
+                if (board[i][j] != side) {
+                    if (gapCountRow == gapSize) {
+                        isPlacedRow = 0;
+                    } else{
+                        gapCountRow++;
+                        isPlacedRow++;
+                    }
+                    continue;
+                } else {
+                    isPlacedRow++;
+                    gapCountRow = 0;
+                }
+
+                if (isPlacedRow == this.winningSize) {
+                    return true;
+                }
+            }
+
+            for (int j = 0; j < this.size; j++) {
+
+                if (board[j][i] != side) {
+                    if (gapCountColum == gapSize) {
+                        isPlacedColumn = 0;
+                    } else{
+                        gapCountColum++;
+                        isPlacedColumn++;
+                    }
+                    continue;
+                } else {
+                    isPlacedColumn++;
+                    gapCountColum = 0;
+                }
+
+                if (isPlacedColumn == this.winningSize) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public boolean hasRowColumnWin(byte side) {
         for (int i = 0; i < this.size; i++) {
 
@@ -162,6 +212,7 @@ public class Board {
                 } else {
                     isPlacedRow++;
                 }
+
                 if (isPlacedRow == this.winningSize) {
                     return true;
                 }
@@ -206,32 +257,37 @@ public class Board {
             int tempCount3 = 0;
 
             for (int i = 0; i < this.size - startRow; i++) {
-
-                final int finalStartRow = startRow + i;
-                if (board[finalStartRow][i] == side) {
-                    tempCount++;
-                } else {
+                if (board[startRow + i][i] != side) {
                     tempCount = 0;
+                    continue;
+                } else {
+                    tempCount++;
                 }
 
                 if (tempCount == this.winningSize) {
                     return true;
                 }
+            }
 
-                if (board[finalStartRow][this.size - 1 - i] == side) {
-                    tempCount2++;
-                } else {
+            for (int i = 0; i < this.size - startRow; i++) {
+                if (board[startRow + i][this.size - 1 - i] != side) {
                     tempCount2 = 0;
+                    continue;
+                } else {
+                    tempCount2++;
                 }
 
                 if (tempCount2 == this.winningSize) {
                     return true;
                 }
+            }
 
-                if (board[i][finalStartRow] == side) {
-                    tempCount3++;
-                } else {
+            for (int i = 0; i < this.size - startRow; i++) {
+                if (board[i][startRow + i] != side) {
                     tempCount3 = 0;
+                    continue;
+                } else {
+                    tempCount3++;
                 }
 
                 if (tempCount3 == this.winningSize) {
@@ -243,10 +299,11 @@ public class Board {
         for (int startCol = this.size - 2; startCol >= 0; startCol--) {
             int tempCount = 0;
             for (int i = 0; i <= startCol; i++) {
-                if (board[i][startCol - i] == side) {
-                    tempCount++;
-                } else {
+                if (board[i][startCol - i] != side) {
                     tempCount = 0;
+                    continue;
+                } else {
+                    tempCount++;
                 }
 
                 if (tempCount == this.winningSize) {

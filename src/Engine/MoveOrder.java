@@ -54,4 +54,18 @@ public class MoveOrder {
 
         return scores;
     }
+
+    public void sort(int i, int[][] legalMoves, int[] scores) {
+        for (int j = i + 1; j < legalMoves.length; j++) {
+            if (scores[j] > scores[i]) {
+                int[] temp = legalMoves[j];
+                legalMoves[j] = legalMoves[i];
+                legalMoves[i] = temp;
+
+                int temp2 = scores[j];
+                scores[j] = scores[i];
+                scores[i] = temp2;
+            }
+        }
+    }
 }
