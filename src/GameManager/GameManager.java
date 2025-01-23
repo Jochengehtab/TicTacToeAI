@@ -27,15 +27,15 @@ import java.util.*;
 public class GameManager {
     // This has the following Layout
     // Dev Engine Losses | Draws | Dev Engine Wins
-    private static final int[] games = new int[]{2259, 1404, 2477};
+    private static final int[] games = new int[]{0, 0, 0};
     private static final int generateHalfMoves = 6;
-    private static final int AMOUNT_THREADS = 5;
+    private static final int AMOUNT_THREADS = 12;
     private final Elo elo = new Elo();
     private final String currentPath = System.getProperty("user.dir");
     private final String DEV = (!currentPath.contains("GameManager") ?
-            currentPath + "\\GameManager" : "") + "\\dev.jar";
+            currentPath + "\\src\\GameManager" : "") + "\\dev.jar";
     private final String BASE = (!currentPath.contains("GameManager") ?
-            currentPath + "\\GameManager" : "") + "\\base.jar";
+            currentPath + "\\src\\GameManager" : "") + "\\base.jar";
 
     Checkpoint checkpoint = new Checkpoint();
 
