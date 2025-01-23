@@ -21,23 +21,23 @@ package src.GameManager;
 import src.Engine.Board;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.NoSuchElementException;
-import java.util.Random;
+import java.time.DateTimeException;
+import java.util.*;
 
 public class GameManager {
     // This has the following Layout
     // Dev Engine Losses | Draws | Dev Engine Wins
-    private static final int[] games = new int[]{1423, 829, 1558};
+    private static final int[] games = new int[]{2259, 1404, 2477};
     private static final int generateHalfMoves = 6;
-    private static final int AMOUNT_THREADS = 12;
+    private static final int AMOUNT_THREADS = 5;
     private final Elo elo = new Elo();
     private final String currentPath = System.getProperty("user.dir");
     private final String DEV = (!currentPath.contains("GameManager") ?
-            currentPath + "\\src\\GameManager" : "") + "\\dev.jar";
+            currentPath + "\\GameManager" : "") + "\\dev.jar";
     private final String BASE = (!currentPath.contains("GameManager") ?
-            currentPath + "\\src\\GameManager" : "") + "\\base.jar";
+            currentPath + "\\GameManager" : "") + "\\base.jar";
+
+    Checkpoint checkpoint = new Checkpoint();
 
     public static void main(String[] args) {
         GameManager gameManager = new GameManager();
@@ -150,10 +150,13 @@ public class GameManager {
         // Determent the color based on the LLR
         String llrColor = currentLLR >= 0 ? "\u001B[32;1m" : "\u001B[31;1m";
 
+        final int total = wins + draws + losses;
+
         System.out.println("LLR        : " + llrColor + currentLLR + "\u001B[0m");
         System.out.println("ELO        : " + elo.getElo(wins, losses, draws));
         System.out.println("Games      : " + Arrays.toString(GameManager.games) +
-                " | Total: " + (wins + draws + losses));
+                " | Total: " + total +
+                " | Draw Percent: " + Math.round((((float) draws / total) * 100) * 100.0) / 100.0);
         System.out.println("Progress   : " + getProgressBar(currentLLR));
     }
 
@@ -537,6 +540,22 @@ public class GameManager {
          */
         public String getName() {
             return this.name;
+        }
+    }
+
+    private final class Checkpoint {
+        private final UUID uuid = UUID.randomUUID();
+        private final File file = new File("checkpoint\\" + uuid);
+        public Checkpoint() {
+
+        }
+
+        public void save() {
+
+        }
+
+        public void loadFromLatestCheckPoint() {
+
         }
     }
 

@@ -24,9 +24,6 @@ import java.util.Arrays;
 public class
 
 
-
-
-
 Search {
 
     private final Stack[] stack = new Stack[256];
@@ -35,14 +32,13 @@ Search {
     private final TranspositionTable transpositionTable = new TranspositionTable(16);
     private final short infinity = 30000;
     private final short MAX_PLY = 256;
+    //LMR
+    // Indexed by Depth | Move counter
+    short[][] reductions;
     private int nodes = 0;
     private int[] bestMove = new int[2];
     private boolean isNormalSearch = true, shouldStop = false;
     private long startTime, thinkTime;
-
-    //LMR
-    // Indexed by Move | MAX_PLY
-    short[][] reductions;
 
     public int negamax(Board board, short depth, int ply, int alpha, int beta) {
 
@@ -140,27 +136,33 @@ Search {
         Games      : [153, 203, 340]
          */
 
-        //Reverse futility pruning
+        // Reverse futility pruning
+        // We basically return the static evaluation (with a beta tweak) when
+        // the static eval minus some margin, in our case staticEval - n * depth, is above beta
         if (depth <= 4 && staticEval - 72 * depth >= beta) {
             return (staticEval + beta) / 2;
         }
-/*
 
-        if (!pvNode)
-        {
-            if (depth >= 3 && staticEval >= beta)
-            {
-                board.makeNullMove();
-                int depthReduction = 3 + depth / 3;
-                int score = -negamax(board, depth - depthReduction, ply + 1, -beta, -alpha);
-                board.unmakeNullMove();
-                if (score >= beta)
-                {
-                    return score;
-                }
+        /*
+        LLR        : 2.97
+        ELO        : 12.43 +- 7.63
+        Games      : [2261, 1408, 2481] | Total: 6150 | Draw Percent: 22.89
+         */
+
+        // Null Move Pruning
+        // We pass a move to our opponent and search with a reduced depth
+        // If we got a beta cutoff
+        if (!pvNode && depth > 4 && staticEval >= beta) {
+            board.makeNullMove();
+            int reducedDepth = 3 + depth / 3;
+            int score = -negamax(board, (short) (depth - reducedDepth), ply + 1, -beta, -alpha);
+            board.unmakeNullMove();
+
+            // Check for a beta cutoff
+            if (score >= beta) {
+                return score;
             }
         }
- */
 
         int bestScore = -infinity;
 
@@ -197,9 +199,10 @@ Search {
                 // Moves that are ordered closer to the end typically are worse,
                 // So we search these types of moves with less depth
                 int lmr = 0;
-                if (depth > 2)
-                {
+                if (depth > 2) {
                     lmr = reductions[depth][moveCounter];
+
+                    // Reduce less if we are in a PvNode
                     lmr -= pvNode ? 2 : 0;
                     lmr = Math.clamp(lmr, 0, depth - 1);
                 }
@@ -257,6 +260,7 @@ Search {
 
         transpositionTable.write(board.getKey(), finalType, (short) staticEval, transpositionTable.scoreToTT(bestScore, ply),
                 bestMovePVS, depth);
+
 
         return bestScore;
     }
@@ -324,7 +328,7 @@ Search {
             tempBestMove = this.bestMove;
         }
 
-        System.out.println("Score: " + score + " | Depth: " + depth + " | Hashfull: " + transpositionTable.hashfull());
+        System.out.println("info depth " + depth + " score " + score + " hashfull " + transpositionTable.hashfull() + " pv " + Arrays.toString(tempBestMove));
         isNormalSearch = true;
         shouldStop = false;
         return tempBestMove;
@@ -347,7 +351,7 @@ Search {
         initStack();
         startTime = System.currentTimeMillis();
         shouldStop = false;
-        short benchDepth = 5;
+        short benchDepth = 7;
 
         Board board = new Board(10, 5);
         int nodeCount = 0;
@@ -397,7 +401,6 @@ Search {
         double lmrDivisorFinal = 200 / 100.0;
         for (int depth = 0; depth < MAX_PLY; depth++) {
             for (int moveCount = 0; moveCount < (board.getSize() * board.getSize()); moveCount++) {
-                // Move with
                 reductions[depth][moveCount] = (short) Math.clamp(lmrBaseFinal + Math.log(depth) * Math.log(moveCount) / lmrDivisorFinal, -32678.0, 32678.0);
             }
         }
