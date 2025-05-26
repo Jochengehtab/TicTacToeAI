@@ -1,1 +1,5 @@
 /out
+src/.idea/misc.xml
+src/.idea/modules.xml
+src/.idea/vcs.xml
+src/TicTacToeAI.iml
