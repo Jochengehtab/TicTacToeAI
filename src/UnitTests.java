@@ -36,6 +36,8 @@ public class UnitTests {
     public void test3x3() {
         board = new Board(3, 0);
 
+        search.initLMR(board);
+
         board = execute("121000000o", 99);
         Assertions.assertEquals("121020000x", board.getBoardNotation());
 
@@ -144,11 +146,11 @@ public class UnitTests {
         TranspositionTable.Entry probed = transpositionTable.probe(200);
         Assertions.assertEquals(9, probed.staticEval());
         Assertions.assertEquals(20000, probed.score());
-        Assertions.assertArrayEquals(probed.move(), new int[]{5, 5});
+        Assertions.assertArrayEquals(new int[]{5, 5}, probed.move());
 
         board = new Board(10, 6);
         board.setBoardNotation("2000000001000000001010000000000000002000002000000000200000000001000020000001000000000000002000000001x");
-        Assertions.assertEquals(1592120758, board.getKey());
+        Assertions.assertEquals(-802136934, board.getKey());
         Assertions.assertNull(transpositionTable.probe(2));
     }
 }
