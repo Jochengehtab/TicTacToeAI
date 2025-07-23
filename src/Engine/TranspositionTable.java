@@ -1,24 +1,25 @@
 /*
-  This file is part of the TicTacToe AI written by Jochengehtab
+    TicTacToeAI
+    Copyright (C) 2024 Jochengehtab
 
-  Copyright (C) 2024-2025 Jochengehtab
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of the
-  License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 
 package src.Engine;
+
+import static src.Engine.Types.EVAL_MATE;
 
 public class TranspositionTable {
     public static final byte LOWER_BOUND = 1;
@@ -52,8 +53,8 @@ public class TranspositionTable {
      * @return If a {@link Entry} was found it returns an Entry otherwise
      */
     public Entry probe(int key) {
-        int index = key & mask;
-        return data[index];
+            int index = key & mask;
+            return data[index];
     }
 
     /**
@@ -65,7 +66,7 @@ public class TranspositionTable {
      * @param move The best move
      * @param depth The current depth
      */
-    public void write(int key, byte type, short staticEval, int score, int[] move, short depth) {
+    public void write(int key, byte type, short staticEval, int score, short move, short depth) {
         int index = key & mask;
         data[index] = new Entry(key, type, staticEval, score, move, depth);
     }
@@ -76,8 +77,10 @@ public class TranspositionTable {
      * @return The corrected score for the transposition table
      */
     public int scoreToTT(int score, int ply) {
-        return score >= 30000 ? score + ply
-                : score <= -30000 ? score - ply
+        return score >= EVAL_MATE
+                ? score + ply
+                : score <= -EVAL_MATE
+                ? score - ply
                 : score;
     }
 
@@ -87,8 +90,10 @@ public class TranspositionTable {
      * @return The corrected score from the transposition table
      */
     public int scoreFromTT(int score, int ply) {
-        return score >= 30000 ? score - ply
-                : score <= -30000 ? score + ply
+        return score >= EVAL_MATE
+                ? score - ply
+                : score <= -EVAL_MATE
+                ? score + ply
                 : score;
     }
 
@@ -132,5 +137,5 @@ public class TranspositionTable {
      * @param move The best move
      * @param depth The current depth
      */
-    public record Entry(int key, byte type, short staticEval, int score, int[] move, short depth) {}
+    public record Entry(int key, byte type, short staticEval, int score, short move, short depth) {}
 }

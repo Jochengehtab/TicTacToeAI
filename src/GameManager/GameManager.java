@@ -1,42 +1,45 @@
 /*
-  This file is part of the TicTacToe AI written by Jochengehtab
+    TicTacToeAI
+    Copyright (C) 2024 Jochengehtab
 
-  Copyright (C) 2024-2025 Jochengehtab
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of the
-  License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 package src.GameManager;
 
-import src.Engine.Board;
+import src.Engine.Movegen.Board;
+import src.Engine.Movegen.Move;
 
 import java.io.*;
-import java.time.DateTimeException;
 import java.util.*;
+
+import static src.Engine.Types.O_SIDE;
+import static src.Engine.Types.X_SIDE;
 
 public class GameManager {
     // This has the following Layout
     // Dev Engine Losses | Draws | Dev Engine Wins
     private static final int[] games = new int[]{0, 0, 0};
+    //private static final int[] games = new int[]{77, 33, 76};
     private static final int generateHalfMoves = 6;
-    private static final int AMOUNT_THREADS = 12;
+    private static final int AMOUNT_THREADS = 1;
     private final Elo elo = new Elo();
     private final String currentPath = System.getProperty("user.dir");
     private final String DEV = (!currentPath.contains("GameManager") ?
-            currentPath + "\\src\\GameManager" : "") + "\\dev.jar";
+            currentPath + "\\GameManager" : "") + "\\dev.jar";
     private final String BASE = (!currentPath.contains("GameManager") ?
-            currentPath + "\\src\\GameManager" : "") + "\\base.jar";
+            currentPath + "\\GameManager" : "") + "\\base.jar";
 
     Checkpoint checkpoint = new Checkpoint();
 
@@ -87,7 +90,7 @@ public class GameManager {
             int losses = games[0];
             int total = wins + draws + losses;
 
-            // If we don't get the amount AMOUNT_THREADS * 2, something went wrong
+            // If our total amount of games does not equal to AMOUNT_THREADS * 2, something went wrong
             if (total / iteration != AMOUNT_THREADS * 2) {
                 System.err.println("Expected " + AMOUNT_THREADS * 2 + " games, got " + total / iteration + " games!");
             }
@@ -242,7 +245,7 @@ public class GameManager {
                 for (int i = 0; i < generateHalfMoves; i++) {
 
                     // Generate all legal moves
-                    int[][] legalMoves = board.generateLegalMoves();
+                    Move[] legalMoves = board.generateLegalMoves();
 
                     // Make a random move on the board
                     board.makeMove(legalMoves[random.nextInt(legalMoves.length)]);
@@ -250,18 +253,18 @@ public class GameManager {
 
                 // Check for a noise position, either the game is over or we are near a game over
                 if (!board.isGameOver() &&
-                        !board.hasWinWithFurtherOffset(1, board.X_SIDE) &&
-                        !board.hasWinWithFurtherOffset(1, board.O_SIDE)) {
+                        !board.hasWinWithFurtherOffset(1, X_SIDE) &&
+                        !board.hasWinWithFurtherOffset(1, O_SIDE)) {
                     isValidBoard = true;
                     boardNotation = board.getBoardNotation();
                 }
             }
 
             // Set up the time management stuff
-            int xTime = 8000;
-            int oTime = 8000;
-            int xInc = 8;
-            int oInc = 8;
+            int xTime = 40000;
+            int oTime = 40000;
+            int xInc = 40;
+            int oInc = 40;
             long startTime;
 
             // Play the first game where the dev Engine starts first
@@ -280,7 +283,7 @@ public class GameManager {
                 xTime += xInc;
 
                 // X made a move so we check for an X win
-                if (board.hasWin(board.X_SIDE)) {
+                if (board.hasWin(X_SIDE)) {
                     wdl[2] += 1;
                     break;
                 }
@@ -304,7 +307,7 @@ public class GameManager {
                 oTime += oInc;
 
                 // O made a move so we check for an O win
-                if (board.hasWin(board.O_SIDE)) {
+                if (board.hasWin(O_SIDE)) {
                     wdl[0] += 1;
                     break;
                 }
@@ -340,7 +343,7 @@ public class GameManager {
 
 
                 // X made a move so we check for an X win
-                if (board.hasWin(board.X_SIDE)) {
+                if (board.hasWin(X_SIDE)) {
                     wdl[0] += 1;
                     break;
                 }
@@ -364,7 +367,7 @@ public class GameManager {
                 oTime += oInc;
 
                 // O made a move so we check for an O win
-                if (board.hasWin(board.O_SIDE)) {
+                if (board.hasWin(O_SIDE)) {
                     wdl[2] += 1;
                     break;
                 }

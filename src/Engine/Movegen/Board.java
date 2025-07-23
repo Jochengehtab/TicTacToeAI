@@ -1,34 +1,33 @@
 /*
-  This file is part of the TicTacToe AI written by Jochengehtab
+    TicTacToeAI
+    Copyright (C) 2024 Jochengehtab
 
-  Copyright (C) 2024-2025 Jochengehtab
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of the
-  License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package src.Engine;
+package src.Engine.Movegen;
+
+import static src.Engine.Types.*;
 
 public class Board {
     private final byte[][] board;
     private final int size;
     public int offset;
-    public final byte NO_SIDE = 0;
-    public final byte X_SIDE = 1;
-    public final byte O_SIDE = 2;
     private int winningSize;
-    private int freeSquares;
+    public int freeSquares;
     private byte sideToMove = 1;
+    public boolean[] hasSquare = new boolean[3];
 
     public Board(int size, int offset) {
         board = new byte[size][size];
@@ -48,8 +47,12 @@ public class Board {
      * Makes a move on the board
      * @param move The move array
      */
-    public void makeMove(int[] move) {
-        board[move[0]][move[1]] = this.sideToMove;
+    public void makeMove(Move move) {
+        if (makesSquare(move, sideToMove, true)) {
+            hasSquare[sideToMove] = true;
+        }
+
+        board[move.x()][move.y()] = this.sideToMove;
         updateTurn();
         this.freeSquares--;
     }
@@ -73,8 +76,13 @@ public class Board {
      * Unmakes a move on the board
      * @param move The move array
      */
-    public void unmakeMove(int[] move) {
-        board[move[0]][move[1]] = NO_SIDE;
+    public void unmakeMove(Move move) {
+
+        board[move.x()][move.y()] = NO_SIDE;
+
+        if (!makesSquare(move, sideToMove, false)) {
+            hasSquare[sideToMove ^ 3] = false;
+        }
         updateTurn();
         this.freeSquares++;
     }
@@ -85,7 +93,7 @@ public class Board {
      * @param y The Y-Axis
      */
     public void unmakeMove(int x, int y) {
-        board[x][y] = 0;
+        board[x][y] = NO_SIDE;
         updateTurn();
         this.freeSquares++;
     }
@@ -111,17 +119,18 @@ public class Board {
         return false;
     }
 
-    public int[][] generateLegalMoves() {
+    public Move[] generateLegalMoves() {
 
-        int[][] legalMoves = new int[freeSquares][2];
+        Move[] legalMoves = new Move[freeSquares];
 
         int counter = 0;
         for (int i = 0; i < this.size; i++) {
             for (int j = 0; j < this.size; j++) {
                 byte token = board[i][j];
                 if (token == NO_SIDE) {
-                    legalMoves[counter][0] = i;
-                    legalMoves[counter][1] = j;
+                    legalMoves[counter] = new Move();
+                    legalMoves[counter].setX(i);
+                    legalMoves[counter].setY(j);
                     counter++;
                 }
             }
@@ -139,6 +148,8 @@ public class Board {
                 board[i][j] = NO_SIDE;
             }
         }
+
+        hasSquare = new boolean[3];
 
         this.sideToMove = X_SIDE;
     }
@@ -245,6 +256,57 @@ public class Board {
             return true;
         }
         return isFull();
+    }
+
+
+    public boolean makesSquare(Move move, byte side, boolean shouldMakeMove) {
+        final int x = move.x();
+        final int y = move.y();
+
+        // TODO IMPORTANT TO CALL THIS FUNCTION WITH 2 PARAMETERS ELSE IT WILL CAUSE A RECURSION
+        if (shouldMakeMove) {
+            makeMove(x, y);
+        }
+
+        // Top-Left square
+        if (isValid(x - 1, y - 1) && board[x - 1][y - 1] == side && board[x - 1][y] == side && board[x][y - 1] == side) {
+            if (shouldMakeMove) {
+                unmakeMove(x, y);
+            }
+            return true;
+        }
+
+        // Top-Right square
+        if (isValid(x + 1, y - 1) && board[x + 1][y - 1] == side && board[x + 1][y] == side && board[x][y - 1] == side) {
+            if (shouldMakeMove) {
+                unmakeMove(x, y);
+            }
+            return true;
+        }
+
+        // Bottom-Right square
+        if (isValid(x + 1, y + 1) && board[x + 1][y + 1] == side && board[x + 1][y] == side && board[x][y + 1] == side) {
+            if (shouldMakeMove) {
+                unmakeMove(x, y);
+            }
+            return true;
+        }
+
+        // Top-Left square
+        if (isValid(x - 1, y + 1) && board[x - 1][y + 1] == side && board[x - 1][y] == side && board[x][y + 1] == side) {
+            if (shouldMakeMove) {
+                unmakeMove(x, y);
+            }
+            return true;
+        }
+        if (shouldMakeMove) {
+            unmakeMove(x, y);
+        }
+        return false;
+    }
+
+    private boolean isValid(int x, int y) {
+        return x > 0 && x < size && y > 0 && y < size;
     }
 
     public boolean hasWin(byte side) {

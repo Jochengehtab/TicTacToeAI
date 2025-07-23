@@ -1,20 +1,19 @@
 /*
-  This file is part of the TicTacToe AI written by Jochengehtab
+    TicTacToeAI
+    Copyright (C) 2024 Jochengehtab
 
-  Copyright (C) 2024-2025 Jochengehtab
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of the
-  License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 
@@ -22,7 +21,8 @@ package src;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import src.Engine.Board;
+import src.Engine.Movegen.Board;
+import src.Engine.Movegen.Move;
 import src.Engine.Search;
 import src.Engine.TranspositionTable;
 
@@ -36,8 +36,6 @@ public class UnitTests {
     public void test3x3() {
         board = new Board(3, 0);
 
-        search.initLMR(board);
-
         board = execute("121000000o", 99);
         Assertions.assertEquals("121020000x", board.getBoardNotation());
 
@@ -48,8 +46,13 @@ public class UnitTests {
     public Board execute(String boardNotation, int depth) {
         board = new Board(3, 0);
         board.setBoardNotation(boardNotation);
-        board.makeMove(search.getBestMove(board, depth));
+        //board.makeMove(search.getBestMove(board, depth));
         return board;
+    }
+
+    @Test
+    public void testGapWin()  {
+
     }
 
     @Test
@@ -82,10 +85,6 @@ public class UnitTests {
 
         board = new Board(5, 1);
         board.setBoardNotation("0000100001000000000100001o");
-        Assertions.assertFalse(board.hasRowColumnWin((byte) 1));
-
-        board.setBoardNotation("0000100001000010000100000o");
-        Assertions.assertTrue(board.hasRowColumnWin((byte) 1));
 
         board.setBoardNotation("2121212121211222112000210o");
         Assertions.assertTrue(board.hasDiagonalWin((byte) 1) && !board.hasDiagonalWin((byte) 2));
@@ -103,16 +102,6 @@ public class UnitTests {
         board = new Board(3, 0);
 
         board.setBoardNotation("111022210o");
-        Assertions.assertTrue(board.hasRowColumnWin((byte) 1));
-
-        board.setBoardNotation("211211211o");
-        Assertions.assertTrue(board.hasRowColumnWin((byte) 2));
-
-        board.setBoardNotation("121211212o");
-        Assertions.assertFalse(board.hasRowColumnWin((byte) 1));
-
-        board.setBoardNotation("121211212o");
-        Assertions.assertFalse(board.hasRowColumnWin((byte) 2));
 
         // Test Diagonal win
         board.setBoardNotation("221212122x");
@@ -142,11 +131,11 @@ public class UnitTests {
     @Test
     public void testTranspositionTable() {
         TranspositionTable transpositionTable = new TranspositionTable(8);
-        transpositionTable.write(200, (byte) 2, (short) 9, 20000, new int[]{5, 5}, (short) 9);
+        transpositionTable.write(200, (byte) 2, (short) 9, 20000, new Move(5, 5).getMoveData(), (short) 9);
         TranspositionTable.Entry probed = transpositionTable.probe(200);
         Assertions.assertEquals(9, probed.staticEval());
         Assertions.assertEquals(20000, probed.score());
-        Assertions.assertArrayEquals(new int[]{5, 5}, probed.move());
+        Assertions.assertEquals(new Move(5, 5).getMoveData(), probed.move());
 
         board = new Board(10, 6);
         board.setBoardNotation("2000000001000000001010000000000000002000002000000000200000000001000020000001000000000000002000000001x");

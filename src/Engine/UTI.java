@@ -1,26 +1,26 @@
 /*
-  This file is part of the TicTacToe AI written by Jochengehtab
+    TicTacToeAI
+    Copyright (C) 2024 Jochengehtab
 
-  Copyright (C) 2024-2025 Jochengehtab
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of the
-  License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 
 package src.Engine;
 
-import java.util.Arrays;
+import src.Engine.BitboardMovegen.Board;
+
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -32,6 +32,7 @@ public class UTI {
     public static void main(String[] args) {
 
         search.initLMR(board);
+        search.initHistory(board);
         if (args.length != 0 && Objects.equals(args[0], "bench")) {
             search.bench();
             return;
@@ -41,7 +42,7 @@ public class UTI {
 
         while (scanner.hasNext()) {
             String token = scanner.nextLine();
-            if (token.equals("stop")) {
+            if (token.equals("stop") || token.equals("quit")) {
                 System.exit(0);
                 break;
             } else if (token.equals("bench")) {
@@ -64,7 +65,7 @@ public class UTI {
 
             try {
                 int depth = Integer.parseInt(depthValueStr);
-                System.out.println("bestmove " + Arrays.toString(search.getBestMove(board, depth)));
+                System.out.println("bestmove " + search.getBestMove(board, depth));
             } catch (NumberFormatException e) {
                 throw new RuntimeException("Invalid number entered as depth");
             }
@@ -115,7 +116,7 @@ public class UTI {
                 timeForMove = oTime / 20 + (oInc / 2);
             }
 
-            System.out.println("bestmove " + Arrays.toString(search.getBestMove(board, (long) timeForMove)));
+            System.out.println("bestmove " + search.getBestMove(board, (long) timeForMove));
 
         } else {
             throw new RuntimeException("Invalid input for the go command: " + token);
