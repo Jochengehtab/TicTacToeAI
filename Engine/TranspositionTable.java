@@ -1,24 +1,25 @@
 /*
-  This file is part of the TicTacToe AI written by Jochengehtab
+    TicTacToeAI
+    Copyright (C) 2024 Jochengehtab
 
-  Copyright (C) 2024-2025 Jochengehtab
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of the
-  License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 
 package src.Engine;
+
+import static src.Engine.Types.EVAL_MATE;
 
 public class TranspositionTable {
     public static final byte LOWER_BOUND = 1;
@@ -30,10 +31,10 @@ public class TranspositionTable {
         byte type: 1 byte
         short staticEval: 2 bytes
         int score: 4 bytes
-        int[] move: (4 * 2) 8 bytes
+        short move 2 bytes
         short depth: 2 bytes
      */
-    private static final int ENTRY_SIZE = 21;
+    private static final int ENTRY_SIZE = 15;
     private int size;
     private int mask;
 
@@ -48,6 +49,7 @@ public class TranspositionTable {
 
     /**
      * Probes the transposition table for an Entry
+     *
      * @param key The key of the current position
      * @return If a {@link Entry} was found it returns an Entry otherwise
      */
@@ -58,42 +60,48 @@ public class TranspositionTable {
 
     /**
      * Writes an {@link Entry} to the transposition table
-     * @param key The key of the current position
-     * @param type The type. Either LOWER_BOUND, UPPER_BOUND or EXACT
+     *
+     * @param key        The key of the current position
+     * @param type       The type. Either LOWER_BOUND, UPPER_BOUND or EXACT
      * @param staticEval The static Eval of the position
-     * @param score The current correct adjusted score
-     * @param move The best move
-     * @param depth The current depth
+     * @param score      The current correct adjusted score
+     * @param move       The best move
+     * @param depth      The current depth
      */
-    public void write(int key, byte type, short staticEval, int score, int[] move, short depth) {
+    public void write(int key, byte type, short staticEval, int score, short move, short depth) {
         int index = key & mask;
         data[index] = new Entry(key, type, staticEval, score, move, depth);
     }
 
     /**
      * @param score The score that should be stored
-     * @param ply The current ply
+     * @param ply   The current ply
      * @return The corrected score for the transposition table
      */
     public int scoreToTT(int score, int ply) {
-        return score >= 30000 ? score + ply
-                : score <= -30000 ? score - ply
+        return score >= EVAL_MATE
+                ? score + ply
+                : score <= -EVAL_MATE
+                ? score - ply
                 : score;
     }
 
     /**
      * @param score The score that should be stored
-     * @param ply The current ply
+     * @param ply   The current ply
      * @return The corrected score from the transposition table
      */
     public int scoreFromTT(int score, int ply) {
-        return score >= 30000 ? score - ply
-                : score <= -30000 ? score + ply
+        return score >= EVAL_MATE
+                ? score - ply
+                : score <= -EVAL_MATE
+                ? score + ply
                 : score;
     }
 
     /**
      * Resizes the transposition table
+     *
      * @param size The new size in MB
      */
     public void resize(int size) {
@@ -105,16 +113,15 @@ public class TranspositionTable {
 
     /**
      * Estimates how full our hash is
+     *
      * @return The estimated hash full
      */
     public int hashfull() {
         int filled = 0;
         int minimum_hash = 1048576 / ENTRY_SIZE;
 
-        for (int i = 0; i < minimum_hash; i++)
-        {
-            if (data[i] != null)
-            {
+        for (int i = 0; i < minimum_hash; i++) {
+            if (data[i] != null) {
                 filled++;
             }
         }
@@ -125,12 +132,14 @@ public class TranspositionTable {
 
     /**
      * Record for a transportation table Entry
-     * @param key The key of the current position
-     * @param type The type. Either LOWER_BOUND, UPPER_BOUND or EXACT
+     *
+     * @param key        The key of the current position
+     * @param type       The type. Either LOWER_BOUND, UPPER_BOUND or EXACT
      * @param staticEval The static Eval of the position
-     * @param score The current correct adjusted score
-     * @param move The best move
-     * @param depth The current depth
+     * @param score      The current correct adjusted score
+     * @param move       The best move
+     * @param depth      The current depth
      */
-    public record Entry(int key, byte type, short staticEval, int score, int[] move, short depth) {}
+    public record Entry(int key, byte type, short staticEval, int score, short move, short depth) {
+    }
 }

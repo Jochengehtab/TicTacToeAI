@@ -1,26 +1,26 @@
 /*
-  This file is part of the TicTacToe AI written by Jochengehtab
+    TicTacToeAI
+    Copyright (C) 2024 Jochengehtab
 
-  Copyright (C) 2024-2025 Jochengehtab
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Affero General Public License as
-  published by the Free Software Foundation, either version 3 of the
-  License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU Affero General Public License for more details.
-
-  You should have received a copy of the GNU Affero General Public License
-  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 
-package src;
+package src.GUI;
 
-import src.Engine.Board;
+import src.Engine.Movegen.Board;
+import src.Engine.Movegen.Move;
 import src.Engine.Search;
 
 import javax.swing.*;
@@ -33,7 +33,7 @@ public class GUI extends JFrame {
 
     private final int size;
     private final Board board;
-    private final Search search = new Search();
+    private final Search search;
     private final JButton[][] buttons;
     private final JLabel view;
     private final JCheckBox shouldCopy = new JCheckBox("Copy text", true);
@@ -45,6 +45,7 @@ public class GUI extends JFrame {
         this.board = board;
         this.size = size;
         this.view = new JLabel("Turn: " + (board.getSideToMove() == 1 ? "X" : "O"));
+        this.search = new Search();
 
         JPanel panel = new JPanel();
         JPanel buttonPanel = new JPanel();
@@ -73,6 +74,7 @@ public class GUI extends JFrame {
                 super.mousePressed(e);
 
                 String input = boardNotationInput.getText();
+                boardNotationInput.setText(null);
                 if (input.isEmpty()) {
                     System.err.println("The provided String is empty!");
                     return;
@@ -132,7 +134,6 @@ public class GUI extends JFrame {
         pack();
     }
 
-    @SuppressWarnings("unused")
     private void playAgainstBot() {
 
         // Play until the board is full
@@ -151,7 +152,7 @@ public class GUI extends JFrame {
             }
 
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board, (long) 5000);
+            Move bestMove = search.getBestMove(board, (long) 10000, false);
 
             // Make the move
             board.makeMove(bestMove);
@@ -177,16 +178,15 @@ public class GUI extends JFrame {
     }
 
     /**
-     * The bot plays against himself
+     * The bot plays against itself
      */
-    @SuppressWarnings("unused")
     private void playGame() {
         System.out.println("Playing a bot game");
 
         // Play until the board is full
         while (!board.isFull() && !board.isGameOver()) {
             // Get the bestmove
-            int[] bestMove = search.getBestMove(board, (long) 3000);
+            Move bestMove = search.getBestMove(board, (long) 10000, false);
 
             // Make the move
             board.makeMove(bestMove);
@@ -262,11 +262,12 @@ public class GUI extends JFrame {
             public void mousePressed(MouseEvent e) {
                 super.mousePressed(e);
 
-                JButton customButton = buttons[button.i][button.j];
+                JButton customButton = buttons[button.getI()][button.getJ()];
 
                 // Update the text
                 customButton.setText(board.getSideToMove() == 1 ? "X" : "O");
 
+                // Set the background color
                 if (board.getSideToMove() == 1) {
                     customButton.setBackground(Color.RED);
                 } else {
@@ -274,12 +275,12 @@ public class GUI extends JFrame {
                 }
 
                 // Make the move on the actual board
-                board.makeMove(button.i, button.j);
+                board.makeMove(button.getI(), button.getJ());
 
                 // Update the turn view
                 view.setText("Turn: " + (board.getSideToMove() == 1 ? "X" : "O"));
 
-                // If the debug mode is activated we disable the button
+                // If the debug mode is activated, we disable the button
                 if (!debugBoardMode.isSelected()) {
                     customButton.removeMouseListener(this);
                 }
@@ -325,16 +326,15 @@ public class GUI extends JFrame {
         pack();
     }
 
-    static class CustomButton extends JButton {
+    public static void main(String[] args) {
+        final int SIZE = 9;
+        final int OFFSET = 4;
 
-        private final int i;
-        private final int j;
+        Board board = new Board(SIZE, OFFSET);
 
-        public CustomButton(String text, int i, int j) {
-            setText(text);
-            this.i = i;
-            this.j = j;
-        }
+        GUI gui = new GUI(SIZE, board);
+        gui.setVisible(true);
+        gui.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     }
 
 }
